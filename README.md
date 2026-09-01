@@ -1,0 +1,111 @@
+# anotherme
+
+跨 IDE 的个人知识与技能仓库。把沉淀的开发规范、成熟方案、样例代码组织为标准 **Agent Skill**（`SKILL.md` 格式），一次编写，通过目录联接（junction）实时安装到所有支持 skill 的 IDE / agent。
+
+修改本仓库中的任何文件后，所有已安装的 IDE 立即生效，无需重新安装。
+
+## 目录结构
+
+```
+.
+├── docs\            # rule 资料库
+│   ├── common_rule.md  # 唯一保留的 always_on rule（跨场景硬约束，已瘦身）
+│   └── archive\     # 已迁移为 skill 的历史 rule（存档，不再被 IDE 加载）
+├── skills\          # 技能仓库（唯一真相源）
+│   ├── gitflow\     # 示例技能：GitFlow 工作流规范
+│   └── _template\   # 新建技能的模板（下划线开头，不会被安装）
+└── scripts\
+    ├── install.bat      # 安装：为各 IDE 创建指向 skills\ 的目录联接
+    └── uninstall.bat    # 卸载：仅移除指向本仓库的联接，不碰其他内容
+```
+
+## 当前技能清单
+
+| 技能 | 来源 | 适用场景 |
+| ---- | ---- | -------- |
+| `gitflow` | git_rule | commit 规范、分支生命周期、发版/热修复流程 |
+| `rabbitmq-reliability` | rabbitmq_rule | SpringBoot 接入 RabbitMQ，消息不丢不重，含完整样例代码与检查清单 |
+| `springboot-spec` | springboot_rule | SpringBoot 工程结构、RESTful API、依赖注入、日志异常、单测 |
+| `java-spec` | java_rule + vscode_rule | Java 编码强制规范；VSCode Maven 项目初始化配置 |
+| `solution-design` | common_rule（节选） | 需求方案设计：搜索先行禁止臆造、开源选型细则、输出要求 |
+| `db-spec` | db_rule | 建表/索引/SQL/ORM 规约，附标准建表 DDL 模板 |
+| `doc-writing` | doc_rule | Markdown 文档规范，附 README/CHANGELOG 模板 |
+| `wx-miniapp` | wx_miniapp_rule | 微信小程序原生开发，Modern JS 语法强制约束 |
+| `uniapp-spec` | uniapp_rule | uni-app（Vue3+Vite）跨端项目规范与项目生成约束 |
+
+## 支持的 IDE 与安装目录
+
+| IDE      | skills 目录                         | 说明                               |
+| -------- | ----------------------------------- | ---------------------------------- |
+| CodeBuddy | `%USERPROFILE%\.codebuddy\skills` | 目录存在时自动安装                 |
+| Qoder    | `%USERPROFILE%\.qoder\skills`      | 目录存在时自动安装                 |
+| Codex（示例） | `%USERPROFILE%\.codex\skills` | 未来接入：在两个脚本的目标映射区各加一行即可 |
+
+接入新的 IDE：只需在 `scripts\install.bat` 与 `uninstall.bat` 的目标映射区新增一行目录即可。
+
+## 使用方法
+
+```bat
+:: 安装全部技能到所有已探测到的 IDE
+scripts\install.bat
+
+:: 只安装到指定 IDE（codebuddy | qoder）
+scripts\install.bat --only=qoder
+
+:: 目标已存在同名联接（指向其他位置）时强制重建
+scripts\install.bat --force
+
+:: 卸载（只移除指向本仓库的联接，绝不误删真实目录）
+scripts\uninstall.bat
+```
+
+安装后各 IDE 目录下出现的是目录联接（JUNCTION），特征：
+
+```
+2026-09-01  10:00    <JUNCTION>     gitflow [d:\MyProducts\anotherme\skills\gitflow]
+```
+
+## 技能的使用方式（触发方式）
+
+日常开发中**不需要任何特殊命令或 prompt**，有两种触发方式：
+
+### 1. 自动触发（主力方式）
+
+各 IDE 只把每个技能的 `name + description` 常驻上下文（几十个 token）。当你的请求命中 description 中的场景词时，agent 会自动加载该技能的完整内容并遵照执行，无需手动干预。
+
+示例：
+- “帮我写一条提交信息” → 自动触发 `gitflow`
+- “项目要接入 RabbitMQ” → 自动触发 `rabbitmq-reliability`
+- “设计一张订单表” → 自动触发 `db-spec`
+
+### 2. 手动触发（强制生效）
+
+- 在对话框直接输入斜杠命令：`/gitflow`、`/db-spec` 等；
+- 或在自然语言中点名：“按我的 gitflow 规范检查一下这个提交”。
+
+适用于自动触发不稳定、或想确保某个规范必然生效的场景。
+
+### 加载流程（渐进式）
+
+技能被触发后，先加载 `SKILL.md` 正文（核心规则与速查表）；仅当涉及具体场景时，才按正文的指引表读取 `references/` 下对应的细则文件，避免占用过多上下文。
+
+### 触发效果的调优
+
+- 若某场景下技能未被触发，往它的 `description` 里补充你实际会用的说法（如“上线”“紧急修复”）；
+- 由于是联接安装，修改保存后即时生效，无需重新运行安装脚本；
+- 注意：skill 是按需触发，不保证 100% 命中；必须始终生效的跨场景硬约束（如回复语言、安全规范）应保留为 IDE 的 always_on rule，不要做成 skill。
+
+## 新增一个技能
+
+1. 复制 `skills\_template` 文件夹，重命名为技能名（全小写 + 连字符，如 `db-spec`）。
+2. 编辑 `SKILL.md`：
+   - frontmatter 的 `name` 必须与文件夹同名；
+   - `description` 决定技能何时被触发（常驻上下文的部分），写清触发场景与边界；
+   - 正文只放高频核心规则（建议 60 行以内），细节放入 `references/` 按需读取。
+3. 运行 `scripts\install.bat` 完成挂载。
+
+## 编写原则
+
+- **渐进式加载**：SKILL.md 是入口，保持精简；大段规范、样例代码、成熟方案拆到 `references/` 子文件，在正文用表格指引。
+- **指令式表达**：规则写成对 agent 的直接指令，不用角色设定话术。
+- **可扩展**：技能目录内可自由添加 `references/`、`examples/`、`scripts/` 等，联接方式不受影响。
