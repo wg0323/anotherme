@@ -3,7 +3,7 @@ name: springboot-spec
 description: |
   SpringBoot 后端工程规范。当用户涉及以下场景时必须使用本技能：
   新建 SpringBoot 工程或模块、划分包结构、编写 Controller/Service/Mapper、
-  设计 RESTful API、依赖注入、日志与异常处理、数据安全、编写单元测试。
+  设计 RESTful API、依赖注入、日志输出与 Logback 配置、异常处理、数据安全、编写单元测试。
   适用于 SpringBoot + MyBatis/MyBatis-Plus 技术栈的 Java 后端开发。
 ---
 
@@ -19,6 +19,7 @@ description: |
 6. 所有外部输入必须校验；敏感数据（密码、身份证等）禁止明文存储、禁止输出到日志；SQL 必须参数绑定，禁止字符串拼接；权限控制推荐 Spring Security。
 7. 包名小写、点分隔符间有且仅有一个自然语义英语单词、单数形式。
 8. Entity 对应 Service 使用官方默认风格：接口继承 `IService<T>`，实现继承 `ServiceImpl<Mapper, T>`，通过 baseMapper 访问 Mapper；非 entity 对应的业务编排 Service（如 CommandService）使用纯接口风格，不继承 IService，通过构造器注入依赖。
+9. 日志输出基线：默认「控制台 + 滚动日志文件（按时间 + 大小切分）」；仅当明确要求关注/分离错误日志时，追加独立 ERROR 日志文件。统一使用 `src/main/resources/logback-spring.xml`，滚动策略用 `SizeAndTimeBasedRollingPolicy`（JDK 8/Spring Boot 2.x 与 JDK 17+/3.x 通用；禁用已弃用的 `SizeAndTimeBasedFNATP`）；详见 `references/logging.md`。
 
 ## 详细规范（按场景读取）
 
@@ -27,3 +28,4 @@ description: |
 | 包结构、包职责、类命名 | `references/project-structure.md` |
 | RESTful URL、HTTP 方法、状态码 | `references/api-design.md` |
 | 单元测试命名与覆盖要求 | `references/testing.md` |
+| 日志输出策略、Logback 配置、滚动/错误日志 | `references/logging.md` |
