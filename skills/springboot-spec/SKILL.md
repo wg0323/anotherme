@@ -21,6 +21,7 @@ description: |
 8. Entity 对应 Service 使用官方默认风格：接口继承 `IService<T>`，实现继承 `ServiceImpl<Mapper, T>`，通过 baseMapper 访问 Mapper；非 entity 对应的业务编排 Service（如 CommandService）使用纯接口风格，不继承 IService，通过构造器注入依赖。
 9. 日志输出基线：默认「控制台 + 滚动日志文件（按时间 + 大小切分）」；仅当明确要求关注/分离错误日志时，追加独立 ERROR 日志文件。统一使用 `src/main/resources/logback-spring.xml`，滚动策略用 `SizeAndTimeBasedRollingPolicy`（JDK 8/Spring Boot 2.x 与 JDK 17+/3.x 通用；禁用已弃用的 `SizeAndTimeBasedFNATP`）；详见 `references/logging.md`。
 10. API 文档基线：对外接口必须提供在线文档，统一使用 Knife4j（基于 springdoc-openapi / OpenAPI3），注解用 `@Tag`/`@Operation`/`@Schema`；禁止已停更的 springfox（Boot 2.6+ 启动崩溃、Boot 3.x 不兼容）。Boot 3.x 依赖必须带 `jakarta` 后缀；原版 `com.github.xiaoymin` 4.5.0 适配 Boot 2.6~3.3，Boot 3.4/3.5+ 换社区 fork `com.baizhukui` 5.x（drop-in，仅改 groupId）。生产环境必须用 `knife4j.production=true` 或鉴权关闭文档裸奔；详见 `references/api-doc.md`。
+11. 新建工程默认跳过测试：`pom.xml` 的 `<properties>` 中必须配置 `<maven.test.skip>true</maven.test.skip>`，使 `mvn compile`/`package`/`install` 全程自动跳过测试编译与执行，无需每次手动加 `-DskipTests`；需要临时运行测试（如 CI）时用 `-Dmaven.test.skip=false` 命令行覆盖即可，不改动 pom；详见 `references/testing.md`。
 
 ## 详细规范（按场景读取）
 
@@ -29,5 +30,5 @@ description: |
 | 包结构、包职责、类命名 | `references/project-structure.md` |
 | RESTful URL、HTTP 方法、状态码 | `references/api-design.md` |
 | API 文档（Knife4j/OpenAPI3）选型、接入、注解、生产安全 | `references/api-doc.md` |
-| 单元测试命名与覆盖要求 | `references/testing.md` |
+| 单元测试命名、覆盖要求、构建默认跳过测试配置 | `references/testing.md` |
 | 日志输出策略、Logback 配置、滚动/错误日志 | `references/logging.md` |

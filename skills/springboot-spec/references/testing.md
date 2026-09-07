@@ -1,5 +1,20 @@
 # 单元测试规范
 
+## 构建默认跳过测试（新建工程必配）
+
+新建 SpringBoot 工程时，必须在 `pom.xml` 的 `<properties>` 中默认跳过测试，使 `mvn compile`、`mvn package`、`mvn install` 全程自动跳过测试的编译与执行，无需每次手动传参。
+
+```xml
+<properties>
+    <!-- 跳过测试编译与执行；compile/package/install 均生效 -->
+    <maven.test.skip>true</maven.test.skip>
+</properties>
+```
+
+- **强制**：使用 `maven.test.skip=true`（同时跳过测试的**编译**与**执行**），而非仅 `skipTests=true`（只跳过执行、仍会编译测试代码）。这样才能在 `compile` 阶段也生效。
+- **说明**：需要临时运行测试时（如 CI 流水线），命令行覆盖即可，无需改动 pom：`mvn test -Dmaven.test.skip=false` 或 `mvn install -Dmaven.test.skip=false`。
+- **说明**：此配置仅改变默认构建行为，不影响 `src/test` 下测试代码本身的编写与命名规范；下述规范在编写测试时仍须遵守。
+
 ## 测试命名规范
 
 - **强制**：测试类以 `Test` 结尾。
