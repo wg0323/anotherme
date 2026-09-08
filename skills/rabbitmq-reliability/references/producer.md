@@ -35,6 +35,9 @@ public class RabbitReturnsCallback implements RabbitTemplate.ReturnsCallback {
 ## CorrelationData 与失败重发
 
 - **规范**：发送消息时传入自定义 `CorrelationData` 子类，保存 exchange、routingKey、payload，便于 `ack=false` 时重发；ID 使用业务唯一标识。
+- **强制**：`ConfirmCallback` 中 `ack=false`（消息未到达 Exchange）时必须触发重发，复用 `CorrelationDataWithMessage` 保存的 payload 重新投递；重发必须设次数上限（建议 ≤3 次），禁止无限重发。
+- **强制**：重发达到上限仍失败必须最终兜底——落库到失败消息表并告警，交由定时补偿任务或人工处理，禁止仅打日志后丢弃。
+- **规范**：重发会导致重复投递，消费端必须保证幂等（见 `consumer.md`）。
 
 ```java
 @Getter
@@ -42,12 +45,69 @@ public class CorrelationDataWithMessage extends CorrelationData {
     private final String exchange;
     private final String routingKey;
     private final Object payload;
+    /** 已重发次数，用于限制重发上限；随 CorrelationData 在多次重发间传递累计 */
+    private final AtomicInteger retryCount = new AtomicInteger(0);
 
     public CorrelationDataWithMessage(String id, String exchange, String routingKey, Object payload) {
         super(id);
         this.exchange = exchange;
         this.routingKey = routingKey;
         this.payload = payload;
+    }
+}
+```
+
+### ack=false 重发落地（生产级 ConfirmCallback）
+
+上文基础版 `ConfirmCallback` 仅记录日志，生产环境必须升级为「重发 + 次数上限 + 最终兜底」。`FailedMessageStore`（失败消息落库）与 `AlarmNotifier`（告警）为需自行实现的兜底组件。
+
+```java
+@Slf4j @Component
+public class RabbitConfirmCallback implements RabbitTemplate.ConfirmCallback {
+
+    /** 重发次数上限 */
+    private static final int MAX_RETRY = 3;
+
+    /**
+     * ConfirmCallback 经 RabbitTemplateCustomizer 注入到 RabbitTemplate，
+     * 若再反向依赖 RabbitTemplate 会形成循环依赖，必须用 @Lazy 打破。
+     */
+    @Lazy @Autowired
+    private RabbitTemplate rabbitTemplate;
+
+    private final FailedMessageStore failedMessageStore;  // 失败消息落库兜底
+    private final AlarmNotifier alarmNotifier;            // 告警组件
+
+    public RabbitConfirmCallback(FailedMessageStore failedMessageStore, AlarmNotifier alarmNotifier) {
+        this.failedMessageStore = failedMessageStore;
+        this.alarmNotifier = alarmNotifier;
+    }
+
+    @Override
+    public void confirm(CorrelationData correlationData, boolean ack, String cause) {
+        if (ack) {
+            log.info("消息投递成功: id={}", correlationData != null ? correlationData.getId() : null);
+            return;
+        }
+        // ack=false：消息未到达 Exchange，需要重发
+        if (!(correlationData instanceof CorrelationDataWithMessage)) {
+            log.error("消息投递失败且缺少重发上下文，无法重发: cause={}", cause);
+            return;
+        }
+        CorrelationDataWithMessage cd = (CorrelationDataWithMessage) correlationData;
+        int retry = cd.getRetryCount().incrementAndGet();
+        if (retry <= MAX_RETRY) {
+            log.warn("消息投递失败，第 {} 次重发: id={}, exchange={}, routingKey={}, cause={}",
+                    retry, cd.getId(), cd.getExchange(), cd.getRoutingKey(), cause);
+            // 复用保存的 exchange/routingKey/payload 重新投递，沿用同一 cd 以累计重发次数
+            rabbitTemplate.convertAndSend(cd.getExchange(), cd.getRoutingKey(), cd.getPayload(), cd);
+        } else {
+            // 达到上限：最终兜底——落库 + 告警，禁止直接丢弃
+            log.error("消息重发 {} 次仍失败，转失败消息表兜底: id={}, exchange={}, routingKey={}",
+                    MAX_RETRY, cd.getId(), cd.getExchange(), cd.getRoutingKey());
+            failedMessageStore.saveSendFailure(cd.getId(), cd.getExchange(), cd.getRoutingKey(), cd.getPayload(), cause);
+            alarmNotifier.notifySendFailed(cd.getId(), cd.getExchange(), cd.getRoutingKey());
+        }
     }
 }
 ```

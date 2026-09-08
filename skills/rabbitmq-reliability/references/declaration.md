@@ -27,11 +27,27 @@ public Binding alarmBinding(Queue alarmQueue, DirectExchange alarmExchange) {
 
 - **强制**：核心业务队列必须通过 `x-dead-letter-exchange` 和 `x-dead-letter-routing-key` 绑定死信交换机；死信 Exchange、Queue、Binding 同样需声明并设置 `durable=true`。
 - **规范**：有时效性要求的消息通过队列级 TTL（`x-message-ttl`，单位毫秒）设置过期，过期后转入死信队列。
+- **强制**：死信队列不是终点，声明后必须配套专门的死信消费者做「落库 + 告警」（见 `consumer.md`），否则失败消息只是从「被丢弃」变成「在死信队列里无人问津地堆积」。
+- **规范**：死信队列应纳入监控，队列长度超阈值即告警。
 
 ```java
-// 死信 Exchange、Queue、Binding 按常规方式声明（durable=true），此处省略
+// ===== 死信 Exchange / Queue / Binding 声明（durable=true）=====
+@Bean
+public DirectExchange alarmDlxExchange() {
+    return ExchangeBuilder.directExchange("nsp.alarm.dlx").durable(true).build();
+}
 
-// 业务队列：绑定死信交换机 + 可选 TTL
+@Bean
+public Queue alarmDeadQueue() {
+    return QueueBuilder.durable("nsp.alarm.dead.queue").build();
+}
+
+@Bean
+public Binding alarmDeadBinding(Queue alarmDeadQueue, DirectExchange alarmDlxExchange) {
+    return BindingBuilder.bind(alarmDeadQueue).to(alarmDlxExchange).with("alarm.dead");
+}
+
+// ===== 业务队列：绑定死信交换机 + 可选 TTL =====
 @Bean
 public Queue alarmQueue() {
     return QueueBuilder.durable("nsp.alarm.queue")
