@@ -40,6 +40,6 @@ description: |
 - 合理使用页面生命周期函数和组件生命周期函数。
 - 编写详细的代码注释，并在代码中添加必要的错误处理和日志记录。
 - 合理使用本地存储和缓存机制。
-- wx API 的回调形式必须封装为 Promise 或使用 `wx.promisify`，禁止嵌套回调。
+- wx API 的回调形式必须 Promise 化：基础库 2.10.2+ 异步 API 不传 success/fail/complete 时默认返回 Promise，或自行封装 / 使用 `miniprogram-api-promise`（微信无内置 `wx.promisify`），禁止嵌套回调。
 - 组件 properties 必须声明类型和默认值，data 初始化必须完整。
 - 页面/组件的 JS 文件顶部必须添加文件头注释，说明用途、作者、创建日期。

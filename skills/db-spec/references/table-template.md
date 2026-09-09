@@ -29,5 +29,5 @@ CREATE TABLE `trade_order` (
 ## 与 ORM 侧的配套约束
 
 - POJO 布尔变量不加 `is` 前缀（如 `deleted`），数据库字段保持 `is_deleted`，通过 `resultMap` 显式映射。
-- 更新记录时必须同时更新修改时间字段（`update_time` 或 `gmt_modified`）为当前时间。
+- 更新记录时必须同时更新 `update_time` 字段为当前时间。
 - 查询字段明确列出，禁止 `SELECT *`。
