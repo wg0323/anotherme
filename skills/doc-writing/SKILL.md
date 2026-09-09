@@ -2,8 +2,9 @@
 name: doc-writing
 description: |
   项目文档编写规范。当用户涉及以下场景时必须使用本技能：
-  编写或更新 README、CHANGELOG、使用指南、API 文档、架构文档，
+  编写或更新 README、CHANGELOG、使用指南、Markdown 形式的 API/架构文档，
   组织文档目录结构，以及文档中代码示例的编写。
+  不适用于 Knife4j/Swagger/OpenAPI3 等在线接口文档的生成与配置（归 springboot-spec）。
 ---
 
 # 文档编写规范

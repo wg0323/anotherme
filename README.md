@@ -39,6 +39,7 @@
 | -------- | ----------------------------------- | ---------------------------------- |
 | CodeBuddy | `%USERPROFILE%\.codebuddy\skills` | 目录存在时自动安装                 |
 | Qoder    | `%USERPROFILE%\.qoder\skills`      | 目录存在时自动安装                 |
+| Qoder CN | `%USERPROFILE%\.qoder-cn\skills`  | 目录存在时自动安装                 |
 | Codex（示例） | `%USERPROFILE%\.codex\skills` | 未来接入：在两个脚本的目标映射区各加一行即可 |
 
 接入新的 IDE：只需在 `scripts\install.bat` 与 `uninstall.bat` 的目标映射区新增一行目录即可。
@@ -49,7 +50,7 @@
 :: 安装全部技能到所有已探测到的 IDE
 scripts\install.bat
 
-:: 只安装到指定 IDE（codebuddy | qoder）
+:: 只安装到指定 IDE（codebuddy | qoder | qodercn）
 scripts\install.bat --only=qoder
 
 :: 目标已存在同名联接（指向其他位置）时强制重建

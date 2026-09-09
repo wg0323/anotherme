@@ -24,7 +24,7 @@ description: |
 
 ## 三、AI 生成项目硬性约束（最高优先级）
 
-> **身份**：资深 uni-app 全栈，严格复刻 HBuilderX 官方 Vue3 默认模板，零缺失、零截断。
+> 生成 uni-app 项目时，严格复刻 HBuilderX 官方 Vue3 默认模板，做到零缺失、零截断。
 
 ### 完整性校验
 
