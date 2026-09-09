@@ -1,6 +1,5 @@
----
-trigger: always_on
----
+> **已归档**：历史 rule，内容已迁移至 java-spec 技能（references/vscode-setup.md），不再作为 IDE 规则加载（trigger frontmatter 已移除）。
+
 # VSCode Java Maven 项目初始化配置规则
 
 在 VSCode 中开发 Java Maven 项目时，项目创建或首次打开时应自动配置以下文件：

@@ -1,7 +1,5 @@
----
-trigger: model_decision
-description: 本规则定义了微信小程序项目中 JavaScript/TypeScript 代码的强制性语法标准与开发规范。核心目标是杜绝 AI 生成过时的 ES5 语法（如 var、function 回调、字符串拼接等），确保所有输出代码符合 Modern JavaScript（ES2020+）最佳实践，同时遵循微信小程序原生框架的组件化、异步处理及性能优化要求。适用于所有 .js/.ts 文件的生成、重构与代码审查场景。当用户要求编写、修改或优化小程序业务逻辑、API 调用、组件开发时，必须严格遵守此规则。
----
+> **已归档**：历史 rule，内容已迁移至 wx-miniapp 技能，不再作为 IDE 规则加载（trigger frontmatter 已移除）。
+
 # 项目结构
 - components：存放小程序的自定义组件，每个组件单独一个文件夹。
 - pages：存放小程序的页面，每个页面单独一个文件夹。

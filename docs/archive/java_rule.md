@@ -1,6 +1,5 @@
----
-trigger: always_on
----
+> **已归档**：历史 rule，内容已迁移至 java-spec 技能，不再作为 IDE 规则加载（trigger frontmatter 已移除）。
+
 # 1. 命名规范
 ## 强制
 1. 命名首尾禁止下划线/美元符；禁用拼音、中文命名。

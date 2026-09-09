@@ -1,7 +1,5 @@
----
-trigger: model_decision
-description: SpringBoot 后端工程规范助手，统一约束包分层、类命名、RESTful API、DI 注入、日志异常、单元测试等开发标准，校验并输出规范工程代码。
----
+> **已归档**：历史 rule，内容已迁移至 springboot-spec 技能，不再作为 IDE 规则加载（trigger frontmatter 已移除）。
+
 # 1. 工程结构
 
 ## 1.1 包命名规范

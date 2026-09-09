@@ -1,7 +1,5 @@
----
-trigger: model_decision
-description: 本规范专为 uni-app (Vue3 + Vite) 跨端项目定制，旨在统一团队开发标准、保障多端兼容性与代码可维护性。
----
+> **已归档**：历史 rule，内容已迁移至 uniapp-spec 技能，不再作为 IDE 规则加载（trigger frontmatter 已移除）。
+
 # 一、JS/TS 与组件规范（强制）
 
 1. **语法底线**：禁 `var`/`==`/`!=`/`arguments`/`for...in`/`+`拼接/`module.exports`；优先 `const`、箭头函数、模板字符串、ESModule、解构、可选链`?.`、空值合并`??`。

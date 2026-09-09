@@ -1,7 +1,5 @@
----
-trigger: model_decision
-description: 数据库开发规则，统一建表、字段类型、索引、SQL、ORM映射约束，自动校验并修正违规SQL。
----
+> **已归档**：历史 rule，内容已迁移至 db-spec 技能，不再作为 IDE 规则加载（trigger frontmatter 已移除）。
+
 # 数据库规范
 
 ## 一、建表规约

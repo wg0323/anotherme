@@ -1,7 +1,5 @@
----
-trigger: model_decision
-description: RabbitMQ 消息可靠性开发规范，统一约束生产者确认回调、消费者重试策略、Exchange/Queue 声明、消息序列化等标准，确保消息不丢失、不重复消费。
----
+> **已归档**：历史 rule，内容已迁移至 rabbitmq-reliability 技能，不再作为 IDE 规则加载（trigger frontmatter 已移除）。
+
 # RabbitMQ 消息可靠性开发规范
 
 > 适用场景：所有使用 RabbitMQ 的 SpringBoot 项目。接入 RabbitMQ 时必须遵循本规范，确保消息投递可靠、消费容错完善。

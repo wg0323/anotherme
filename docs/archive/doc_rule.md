@@ -1,7 +1,5 @@
----
-trigger: model_decision
-description: 定义项目文档编写规范，涵盖Markdown格式要求、标准目录结构、README与CHANGELOG内容模板、文档组织原则及代码示例标准，确保文档统一、清晰且易于维护。
----
+> **已归档**：历史 rule，内容已迁移至 doc-writing 技能，不再作为 IDE 规则加载（trigger frontmatter 已移除）。
+
 # 通用要求
 - 所有文档使用 Markdown 格式，文件编码 UTF-8，换行符统一 Unix(LF)。
 - 使用简洁、清晰的语言。
