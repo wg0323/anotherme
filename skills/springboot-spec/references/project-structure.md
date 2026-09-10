@@ -1,5 +1,25 @@
 # 工程结构与类命名
 
+## 工程根目录布局
+
+单个 SpringBoot 工程根目录按「人读的说明 vs 机器执行的资产」划分：
+
+```text
+project-root/
+├── src/         # 源码：Java + resources，唯一可编译来源
+├── db/          # 数据库可执行资产：schema.sql、初始化/迁移脚本，被 mysql 执行
+├── docs/        # 给人读的说明性文档（组织规则见 doc-writing 技能 references/docs-structure.md）
+├── .vscode/     # IDE 配置：settings.json / launch.json
+├── pom.xml      # Maven 构建配置
+└── target/      # 构建产物，已被 .gitignore 忽略
+```
+
+边界：
+
+- `db/schema.sql` 是要被 mysql 执行的**资产**，留在 `db/`，不进 docs；对应的设计说明文档才进 docs。
+- 源码、可执行脚本、IDE 配置、构建配置、构建产物一律不进 docs。
+- docs/ 内部如何分类、建目录门槛，遵循 `doc-writing` 技能（唯一真相源）。
+
 ## 包职责说明
 
 | 包名           | 职责                              | 命名示例                                    |

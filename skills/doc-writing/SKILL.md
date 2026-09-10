@@ -19,22 +19,18 @@ description: |
 
 ## 目录结构
 
-- `README.md`：项目根目录，提供项目概述；文件名固定 `README.md`（全大写 + `.md`），禁止 `readme.md`/`README.MD`/`README_CN.md`/`项目说明.md` 等变体。
-- `CHANGELOG.md`：项目根目录，记录版本变更。
-- `doc/`：存放详细文档。
-  - `guide/`：使用指南。
-  - `api/`：API 文档。
-  - `examples/`：示例代码文档。
-  - `requirements/`：产品需求文档。
-  - `images/`：文档引用的图片资源。
-  - `architecture/`：架构设计文档（可选，中大型项目建议添加）。
+- `README.md`、`CHANGELOG.md`：项目根目录；README 文件名固定 `README.md`（全大写 + `.md`），禁止 `readme.md`/`README.MD`/`README_CN.md`/`项目说明.md` 等变体。
+- `docs/`：给人读的说明性文档。源码 `src/`、可执行脚本 `db/`、IDE 配置 `.vscode/`、构建配置 `pom.xml`、构建产物 `target/` 一律不进 docs。
+  - 分类：`requirements/`（需求计划）、`guide/`（使用指南）、`architecture/`（架构决策）、`api/`（对接文档，预留）、`operations/`（运维手册，预留）、`examples/`、`images/`。
+  - 门槛：同类文档满 3 份再建子目录，否则先平铺 `docs/` 根下，避免空壳目录。
+  - 完整判据、分类树（含生命周期）、维护规则见 `references/docs-structure.md`（唯一真相源）。
 
 ## 文档内容组织
 
 - 从整体到局部，从简单到复杂；重要信息放在前面；相关内容放在一起。
 - 使用小标题和列表增强可读性。
 - 单段不超过 5 行；超过 3 个并列点使用列表。
-- 架构图优先使用 Mermaid 代码块（内嵌于 Markdown）；截图存放于 `doc/images/` 目录，使用相对路径引用。
+- 架构图优先使用 Mermaid 代码块（内嵌于 Markdown）；截图存放于 `docs/images/` 目录，使用相对路径引用。
 - 文档中的外部链接应定期检查有效性，避免死链。
 
 ## 代码示例规范
@@ -51,3 +47,4 @@ description: |
 | ---- | -------- |
 | 编写/交付 README（新建项目自述文件、章节骨架、按项目类型裁剪、填写红线） | `references/readme-template.md` |
 | 编写 CHANGELOG | `references/changelog-template.md` |
+| 组织 docs/ 目录（进/不进判据、满 3 份门槛、分类树） | `references/docs-structure.md` |

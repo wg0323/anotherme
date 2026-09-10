@@ -28,7 +28,7 @@ description: |
 
 | 场景 | 参考文件 |
 | ---- | -------- |
-| 包结构、包职责、类命名 | `references/project-structure.md` |
+| 工程根目录布局(src/db/docs/.vscode/pom.xml/target)、包结构、包职责、类命名 | `references/project-structure.md` |
 | RESTful URL、HTTP 方法、状态码 | `references/api-design.md` |
 | API 文档（Knife4j/OpenAPI3）选型、接入、注解、生产安全 | `references/api-doc.md` |
 | 单元测试命名、覆盖要求、构建默认跳过测试配置 | `references/testing.md` |

@@ -79,7 +79,7 @@ project-root/
 │   └── src/main/resources/
 ├── xxx-admin-web/       # 前端管理后台
 ├── xxx-uniapp/          # 小程序/App
-└── docs/                # 文档、SQL 脚本
+└── docs/                # 文档
 ```
 
 ## 环境要求
@@ -95,7 +95,7 @@ project-root/
 
 ```bash
 # 1. 导入数据库脚本
-mysql -u root -p < docs/sql/init.sql
+mysql -u root -p < db/schema.sql
 
 # 2. 修改配置（数据库/Redis 连接）
 # 文件：src/main/resources/application-dev.yml
