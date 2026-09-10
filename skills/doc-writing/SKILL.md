@@ -3,7 +3,7 @@ name: doc-writing
 description: |
   项目文档编写规范。当用户涉及以下场景时必须使用本技能：
   编写或更新 README、CHANGELOG、使用指南、Markdown 形式的 API/架构文档，
-  组织文档目录结构，以及文档中代码示例的编写。
+  新建工程/项目脚手架交付自述文件（README），组织文档目录结构，以及文档中代码示例的编写。
   不适用于 Knife4j/Swagger/OpenAPI3 等在线接口文档的生成与配置（归 springboot-spec）。
 ---
 
@@ -19,7 +19,7 @@ description: |
 
 ## 目录结构
 
-- `README.md`：项目根目录，提供项目概述。
+- `README.md`：项目根目录，提供项目概述；文件名固定 `README.md`（全大写 + `.md`），禁止 `readme.md`/`README.MD`/`README_CN.md`/`项目说明.md` 等变体。
 - `CHANGELOG.md`：项目根目录，记录版本变更。
 - `doc/`：存放详细文档。
   - `guide/`：使用指南。
@@ -49,5 +49,5 @@ description: |
 
 | 场景 | 参考文件 |
 | ---- | -------- |
-| 编写 README | `references/readme-template.md` |
+| 编写/交付 README（新建项目自述文件、章节骨架、按项目类型裁剪、填写红线） | `references/readme-template.md` |
 | 编写 CHANGELOG | `references/changelog-template.md` |

@@ -25,13 +25,13 @@
 | ---- | ---- | -------- |
 | `gitflow` | git_rule | commit 规范、分支生命周期、发版/热修复流程 |
 | `rabbitmq-reliability` | rabbitmq_rule | SpringBoot 接入 RabbitMQ，消息不丢不重，含完整样例代码与检查清单 |
-| `springboot-spec` | springboot_rule | SpringBoot 工程结构、RESTful API、依赖注入、日志异常、单测 |
+| `springboot-spec` | springboot_rule | SpringBoot 工程结构、RESTful API、依赖注入、日志异常、单测、新建工程 README 交付 |
 | `java-spec` | java_rule + vscode_rule | Java 编码强制规范；VSCode Maven 项目初始化配置 |
 | `solution-design` | common_rule（节选） | 需求方案设计：搜索先行禁止臆造、开源选型细则、输出要求 |
 | `db-spec` | db_rule | 建表/索引/SQL/ORM 规约，附标准建表 DDL 模板 |
-| `doc-writing` | doc_rule | Markdown 文档规范，附 README/CHANGELOG 模板 |
-| `wx-miniapp` | wx_miniapp_rule | 微信小程序原生开发，Modern JS 语法强制约束 |
-| `uniapp-spec` | uniapp_rule | uni-app（Vue3+Vite）跨端项目规范与项目生成约束 |
+| `doc-writing` | doc_rule | Markdown 文档规范，附 README/CHANGELOG 模板（README 模板唯一真相源） |
+| `wx-miniapp` | wx_miniapp_rule | 微信小程序原生开发，Modern JS 语法强制约束、新建项目 README 交付约束 |
+| `uniapp-spec` | uniapp_rule | uni-app（Vue3+Vite）跨端项目规范与项目生成约束（含 README 交付） |
 
 ## 支持的 IDE 与安装目录
 

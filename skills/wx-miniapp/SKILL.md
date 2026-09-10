@@ -43,3 +43,10 @@ description: |
 - wx API 的回调形式必须 Promise 化：基础库 2.10.2+ 异步 API 不传 success/fail/complete 时默认返回 Promise，或自行封装 / 使用 `miniprogram-api-promise`（微信无内置 `wx.promisify`），禁止嵌套回调。
 - 组件 properties 必须声明类型和默认值，data 初始化必须完整。
 - 页面/组件的 JS 文件顶部必须添加文件头注释，说明用途、作者、创建日期。
+
+## 新建项目自述文件（强制）
+
+- **文件名固定**：项目根目录 `README.md`（与 `project.config.json`、`app.json` 同级，全大写 + `.md`），禁止 `readme.md`/`README.MD`/`README_CN.md`/`项目说明.md` 等变体。
+- **章节顺序固定**：项目名称 + 一句话描述 → 📋 目录 → 项目简介（含核心功能任务列表）→ 技术栈（分类/技术/版本表格）→ 项目结构（树形 + 目录职责）→ 环境要求 → 快速开始 → 配置说明（配置项/说明/默认值表格）→ 上传与发布 → 接口地址与环境切换 → 常见问题；`更新日志`/`许可证` 仅在仓库确有 `CHANGELOG.md`/`LICENSE` 时保留，否则整节删除、禁止悬空链接。
+- **本栈差异项**：环境要求写微信开发者工具版本 + 最低基础库版本 + AppID；快速开始写「克隆 → 微信开发者工具导入项目根目录 → 填写 AppID →（使用 npm 时）工具栏构建 npm → 编译预览」；配置说明写 `config/` 各环境 URL 与 `project.config.json` 的 appid/setting；项目结构须体现 `pages`/`components`/`api`/`config`/`static`；模板中的 `API 文档` 章节改名为 `接口地址与环境切换`，`部署指南` 改为 `上传与发布`（上传体验版 → 提交审核 → 发布）。
+- **红线**：无实质内容的章节整节删除，禁止「待补充」空章节与占位假数据；步骤必须与项目实际一致；完整模板见 `doc-writing` 技能的 `references/readme-template.md`，未安装该技能时按上述骨架生成。
