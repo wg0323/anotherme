@@ -6,6 +6,8 @@
 2. `.vscode/launch.json`：提供通用调试配置，`projectName` 与 pom.xml 的 artifactId 一致，包含一个 "Current File" 配置项，vmArgs 添加 `-Dfile.encoding=UTF-8`。
 3. 不在项目根目录放置 launch.json，统一放在 `.vscode/` 目录下。
 
+> **编码乱码专项**：上面的 `-Dfile.encoding=UTF-8` 只是「写入端」的一半。Windows 控制台乱码的完整修复（终端 profile `chcp 65001`、`console: integratedTerminal`、JDK 18+ 的 `stdout.encoding`、pom/application.yml 侧的编码统一）以 `springboot-spec` 技能的 `references/encoding.md` 为唯一真相源；本文件只负责 launch.json/settings.json 的初始化落位，不重复展开编码细节。
+
 ## JDK 版本冲突处理（老项目 + 新版扩展）
 
 ### 何时需要处理
