@@ -44,6 +44,25 @@
 
 接入新的 IDE：只需在 `scripts\install.bat` 与 `uninstall.bat` 的目标映射区新增一行目录即可。
 
+### 目录五花八门怎么办（分享给他人时）
+
+脚本用的是 `%USERPROFILE%\.codebuddy`、`%USERPROFILE%\.qoder-cn` 这类**用户数据目录**，与 IDE 的**程序安装位置无关**——无论把 CodeBuddy / Qoder CN 装在 C 盘还是 D 盘，`%USERPROFILE%` 都会自动解析到接收者自己的主目录，标准安装**直接跑脚本即可，无需任何配置**。
+
+唯一需要手动干预的是**便携版 / 手动迁移过数据目录**的情况：此时 skills 目录不在 `%USERPROFILE%\.xxx\skills` 下。用 `--only` + `--dir` 显式指定即可（`--dir` 必须配合 `--only`）：
+
+```bat
+:: 例：CodeBuddy 便携版的数据目录在 D 盘
+scripts\install.bat --only=codebuddy --dir="D:\PortableApps\CodeBuddy\data\skills"
+
+:: 例：Qoder CN 数据目录被迁到了 E 盘
+scripts\install.bat --only=qodercn --dir="E:\qoder-cn-data\skills"
+
+:: 卸载时用同样的 --only + --dir 定位
+scripts\uninstall.bat --only=qodercn --dir="E:\qoder-cn-data\skills"
+```
+
+标准安装的接收者探测不到某 IDE 时，脚本会自动跳过并提示上面的 `--dir` 用法。这些参数都是**可选增量**：不传时行为与从前完全一致。
+
 ## 使用方法
 
 ```bat
@@ -55,6 +74,9 @@ scripts\install.bat --only=qoder
 
 :: 目标已存在同名联接（指向其他位置）时强制重建
 scripts\install.bat --force
+
+:: IDE 数据目录不在默认位置（便携版/迁移过）时手动指定
+scripts\install.bat --only=codebuddy --dir="D:\PortableApps\CodeBuddy\data\skills"
 
 :: 卸载（只移除指向本仓库的联接，绝不误删真实目录）
 scripts\uninstall.bat

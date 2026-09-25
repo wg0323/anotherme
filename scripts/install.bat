@@ -11,6 +11,9 @@ rem  Usage:
 rem    install.bat                 Install to all detected IDEs
 rem    install.bat --only=qoder    Install to one IDE only
 rem                                (codebuddy / qoder / qodercn)
+rem    install.bat --only=qodercn  Install into a non-standard skills
+rem      --dir="D:\...\skills"     dir (portable IDE / relocated data
+rem                                dir). --dir must pair with --only.
 rem    install.bat --force         Rebuild junctions that point
 rem                                elsewhere (never deletes real dirs)
 rem ============================================================
@@ -20,6 +23,7 @@ set "SKILLS=%REPO%\skills"
 
 set "FORCE=0"
 set "ONLY="
+set "CUSTOM_DIR="
 
 :parse
 if "%~1"=="" goto parse_done
@@ -28,14 +32,24 @@ if /i "%~1"=="--help" goto usage
 if /i "%~1"=="-h" goto usage
 set "arg=%~1"
 if "!arg:~0,7!"=="--only=" set "ONLY=!arg:~7!"
-rem tolerate "--only xxx" (some shells split "--only=xxx" at the '=')
+if "!arg:~0,6!"=="--dir=" set "CUSTOM_DIR=!arg:~6!"
+rem tolerate "--only xxx" / "--dir xxx" (some shells split at the '=')
 if /i "%~1"=="--only" (
     set "ONLY=%~2"
+    shift
+)
+if /i "%~1"=="--dir" (
+    set "CUSTOM_DIR=%~2"
     shift
 )
 shift
 goto parse
 :parse_done
+
+if defined CUSTOM_DIR if not defined ONLY (
+    echo [ERROR] --dir must be combined with --only=codebuddy^|qoder^|qodercn
+    exit /b 1
+)
 
 if not exist "%SKILLS%" (
     echo [ERROR] skills directory not found: %SKILLS%
@@ -64,6 +78,8 @@ rem ---------- subroutines ----------
 set "IDE=%~1"
 set "TARGET_DIR=%~2"
 if defined ONLY if /i not "%ONLY%"=="%IDE%" exit /b 0
+rem --dir overrides the default skills dir for the selected IDE
+if defined CUSTOM_DIR set "TARGET_DIR=%CUSTOM_DIR%"
 if not exist "%TARGET_DIR%" (
     rem IDE installed but skills dir missing: create it
     for %%i in ("%TARGET_DIR%\..") do set "PARENT=%%~fi"
@@ -71,6 +87,7 @@ if not exist "%TARGET_DIR%" (
 )
 if not exist "%TARGET_DIR%" (
     echo [%IDE%] skills dir not found, skipped: %TARGET_DIR%
+    if not defined CUSTOM_DIR echo        hint: data dir elsewhere? use --only=%IDE% --dir="...\skills"
     exit /b 0
 )
 echo [%IDE%] target: %TARGET_DIR%
@@ -133,5 +150,10 @@ exit /b 0
 
 :usage
 echo anotherme skill installer
-echo Usage: install.bat [--only=codebuddy^|qoder^|qodercn] [--force]
+echo Usage: install.bat [--only=codebuddy^|qoder^|qodercn] [--dir=SKILLS_PATH] [--force]
+echo.
+echo   --only=IDE  target a single IDE
+echo   --dir=PATH  override that IDE's skills dir ^(portable / relocated
+echo               data dir^); must be combined with --only
+echo   --force     rebuild junctions that point elsewhere
 exit /b 0
