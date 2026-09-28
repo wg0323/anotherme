@@ -9,8 +9,8 @@
 ```
 .
 ├── docs\            # rule 资料库
-│   ├── common_rule.md  # 唯一保留的 always_on rule（跨场景硬约束，已瘦身）
-│   └── archive\     # 已迁移为 skill 的历史 rule（存档，不再被 IDE 加载）
+│   ├── common_rule.md  # 唯一保留的 always_on rule（跨场景硬约束，已瘦身，随版本库跟踪）
+│   └── archive\     # 已迁移为 skill 的历史 rule（存档，不再被 IDE 加载，不随版本库跟踪）
 ├── skills\          # 技能仓库（唯一真相源）
 │   ├── gitflow\     # 示例技能：GitFlow 工作流规范
 │   └── _template\   # 新建技能的模板（下划线开头，不会被安装）
@@ -88,6 +88,26 @@ scripts\uninstall.bat
 ```
 2026-09-01  10:00    <JUNCTION>     gitflow [d:\MyProducts\anotherme\skills\gitflow]
 ```
+
+## 通用规则（common_rule.md）的安装与使用
+
+`docs\common_rule.md` 是仓库中唯一保留的 **always_on 通用规则**（中文回复、代码质量准则、外部信息检索主干、安全与授权边界等跨场景硬约束）。与按需触发的技能不同，它常驻每次会话的上下文，因此保持精简；该文件**随版本库跟踪，克隆即可获得**。
+
+规则**不会**被 `install.bat` 自动安装（脚本只处理技能的目录联接），需手动放入 IDE 的规则目录。推荐安装为**用户级规则**（对本机全部项目生效）：
+
+| IDE | 规则目录 | 说明 |
+| --- | -------- | ---- |
+| CodeBuddy | `%USERPROFILE%\.codebuddy\rules\` | 规则文件扩展名为 `.mdc` |
+| Qoder | `%USERPROFILE%\.qoder\rules\` | 保留 frontmatter 的 `trigger: always_on` |
+| Qoder CN | `%USERPROFILE%\.qoder-cn\rules\` | 保留 frontmatter 的 `trigger: always_on` |
+
+安装步骤：
+
+1. 复制 `docs\common_rule.md` 到对应 IDE 的规则目录（CodeBuddy 需将扩展名改为 `.mdc`）；
+2. 重启 IDE / 开新会话，确认规则已生效；
+3. 规则为**副本安装**（与技能的目录联接不同）：每次修改 `docs\common_rule.md` 后，需重新复制到各 IDE 的规则目录。
+
+> 只想对单个项目生效时，可改用项目级规则目录（如 `<项目>\.qoder\rules\` 或 `<项目>\.codebuddy\rules\`）。
 
 ## 修改技能后的同步
 

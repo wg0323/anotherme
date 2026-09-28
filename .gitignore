@@ -2,4 +2,7 @@
 Thumbs.db
 desktop.ini
 .DS_Store
-/docs
+
+# docs 目录：仅 common_rule.md 随版本库跟踪（供使用者手动安装的通用规则）
+/docs/*
+!/docs/common_rule.md
