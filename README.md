@@ -28,6 +28,7 @@
 | `springboot-spec` | springboot_rule | SpringBoot 工程结构、RESTful API、依赖注入、日志异常、单测、新建工程 README 交付 |
 | `java-spec` | java_rule + vscode_rule | Java 编码强制规范；VSCode Maven 项目初始化配置 |
 | `solution-design` | common_rule（节选） | 需求方案设计：搜索先行禁止臆造、开源选型细则、输出要求 |
+| `external-research` | common_rule（节选） | 外部信息检索：工具命令/版本兼容/配置项/报错排查等场景，官方来源优先，辅助资料须交叉验证 |
 | `db-spec` | db_rule | 建表/索引/SQL/ORM 规约，附标准建表 DDL 模板 |
 | `doc-writing` | doc_rule | Markdown 文档规范，附 README/CHANGELOG 模板（README 模板唯一真相源） |
 | `wx-miniapp` | wx_miniapp_rule | 微信小程序原生开发，Modern JS 语法强制约束、新建项目 README 交付约束 |
