@@ -41,6 +41,7 @@
 | CodeBuddy | `%USERPROFILE%\.codebuddy\skills` | 目录存在时自动安装                 |
 | Qoder    | `%USERPROFILE%\.qoder\skills`      | 目录存在时自动安装                 |
 | Qoder CN | `%USERPROFILE%\.qoder-cn\skills`  | 目录存在时自动安装                 |
+| Claude Code | `%USERPROFILE%\.claude\skills` | 目录存在时自动安装；官方支持符号链接加载，JUNCTION 同效 |
 | Codex（示例） | `%USERPROFILE%\.codex\skills` | 未来接入：在两个脚本的目标映射区各加一行即可 |
 
 接入新的 IDE：只需在 `scripts\install.bat` 与 `uninstall.bat` 的目标映射区新增一行目录即可。
@@ -70,7 +71,7 @@ scripts\uninstall.bat --only=qodercn --dir="E:\qoder-cn-data\skills"
 :: 安装全部技能到所有已探测到的 IDE
 scripts\install.bat
 
-:: 只安装到指定 IDE（codebuddy | qoder | qodercn）
+:: 只安装到指定 IDE（codebuddy | qoder | qodercn | claude）
 scripts\install.bat --only=qoder
 
 :: 目标已存在同名联接（指向其他位置）时强制重建
@@ -100,14 +101,15 @@ scripts\uninstall.bat
 | CodeBuddy | `%USERPROFILE%\.codebuddy\rules\` | 规则文件扩展名为 `.mdc` |
 | Qoder | `%USERPROFILE%\.qoder\rules\` | 保留 frontmatter 的 `trigger: always_on` |
 | Qoder CN | `%USERPROFILE%\.qoder-cn\rules\` | 保留 frontmatter 的 `trigger: always_on` |
+| Claude Code | `%USERPROFILE%\.claude\CLAUDE.md` | 记忆文件（无 rules 目录），将规则内容追加/合并其中，已存在则勿整体覆盖 |
 
 安装步骤：
 
-1. 复制 `docs\common_rule.md` 到对应 IDE 的规则目录（CodeBuddy 需将扩展名改为 `.mdc`）；
+1. 复制 `docs\common_rule.md` 到对应 IDE 的规则目录（CodeBuddy 需将扩展名改为 `.mdc`；Claude Code 无 rules 目录，将内容追加/合并进 `CLAUDE.md`）；
 2. 重启 IDE / 开新会话，确认规则已生效；
 3. 规则为**副本安装**（与技能的目录联接不同）：每次修改 `docs\common_rule.md` 后，需重新复制到各 IDE 的规则目录。
 
-> 只想对单个项目生效时，可改用项目级规则目录（如 `<项目>\.qoder\rules\` 或 `<项目>\.codebuddy\rules\`）。
+> 只想对单个项目生效时，可改用项目级规则目录（如 `<项目>\.qoder\rules\`、`<项目>\.codebuddy\rules\` 或 `<项目>\CLAUDE.md`）。
 
 ## 修改技能后的同步
 

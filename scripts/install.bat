@@ -10,7 +10,7 @@ rem
 rem  Usage:
 rem    install.bat                 Install to all detected IDEs
 rem    install.bat --only=qoder    Install to one IDE only
-rem                                (codebuddy / qoder / qodercn)
+rem                                (codebuddy / qoder / qodercn / claude)
 rem    install.bat --only=qodercn  Install into a non-standard skills
 rem      --dir="D:\...\skills"     dir (portable IDE / relocated data
 rem                                dir). --dir must pair with --only.
@@ -47,7 +47,7 @@ goto parse
 :parse_done
 
 if defined CUSTOM_DIR if not defined ONLY (
-    echo [ERROR] --dir must be combined with --only=codebuddy^|qoder^|qodercn
+    echo [ERROR] --dir must be combined with --only=codebuddy^|qoder^|qodercn^|claude
     exit /b 1
 )
 
@@ -66,6 +66,7 @@ set "FAILED=0"
 call :install_ide codebuddy "%USERPROFILE%\.codebuddy\skills"
 call :install_ide qoder     "%USERPROFILE%\.qoder\skills"
 call :install_ide qodercn   "%USERPROFILE%\.qoder-cn\skills"
+call :install_ide claude    "%USERPROFILE%\.claude\skills"
 
 echo.
 echo ==================== Summary ====================
@@ -150,7 +151,7 @@ exit /b 0
 
 :usage
 echo anotherme skill installer
-echo Usage: install.bat [--only=codebuddy^|qoder^|qodercn] [--dir=SKILLS_PATH] [--force]
+echo Usage: install.bat [--only=codebuddy^|qoder^|qodercn^|claude] [--dir=SKILLS_PATH] [--force]
 echo.
 echo   --only=IDE  target a single IDE
 echo   --dir=PATH  override that IDE's skills dir ^(portable / relocated

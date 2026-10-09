@@ -11,7 +11,7 @@ rem
 rem  Usage:
 rem    uninstall.bat                 Uninstall from all detected IDEs
 rem    uninstall.bat --only=qoder    Uninstall from one IDE only
-rem                                  (codebuddy / qoder / qodercn)
+rem                                  (codebuddy / qoder / qodercn / claude)
 rem    uninstall.bat --only=qodercn  Uninstall from a non-standard skills
 rem      --dir="D:\...\skills"       dir; --dir must pair with --only.
 rem ============================================================
@@ -43,7 +43,7 @@ goto parse
 :parse_done
 
 if defined CUSTOM_DIR if not defined ONLY (
-    echo [ERROR] --dir must be combined with --only=codebuddy^|qoder^|qodercn
+    echo [ERROR] --dir must be combined with --only=codebuddy^|qoder^|qodercn^|claude
     exit /b 1
 )
 
@@ -56,6 +56,7 @@ set "SKIPPED=0"
 call :uninstall_ide codebuddy "%USERPROFILE%\.codebuddy\skills"
 call :uninstall_ide qoder     "%USERPROFILE%\.qoder\skills"
 call :uninstall_ide qodercn   "%USERPROFILE%\.qoder-cn\skills"
+call :uninstall_ide claude    "%USERPROFILE%\.claude\skills"
 
 echo.
 echo ==================== Summary ====================
@@ -108,7 +109,7 @@ exit /b 0
 
 :usage
 echo anotherme skill uninstaller
-echo Usage: uninstall.bat [--only=codebuddy^|qoder^|qodercn] [--dir=SKILLS_PATH]
+echo Usage: uninstall.bat [--only=codebuddy^|qoder^|qodercn^|claude] [--dir=SKILLS_PATH]
 echo.
 echo   --only=IDE  target a single IDE
 echo   --dir=PATH  override that IDE's skills dir ^(portable / relocated
