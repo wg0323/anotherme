@@ -16,7 +16,7 @@ description: |
 3. Controller 仅负责 HTTP 请求路由、参数绑定、响应封装，严禁包含任何业务逻辑；使用 `@RestController` + `@RequestMapping`。
 4. 日志必须使用 SLF4J（推荐 `@Slf4j`），占位符 `{}` 拼接，异常对象作为最后一个参数传入；禁止字符串拼接日志、`System.out`、`e.printStackTrace()`。
 5. 统一使用 `@ControllerAdvice` 全局异常处理；自定义业务异常继承 `RuntimeException`；异常信息不暴露系统内部细节。
-6. 所有外部输入必须校验；敏感数据（密码、身份证等）禁止明文存储、禁止输出到日志；SQL 必须参数绑定，禁止字符串拼接；权限控制推荐 Spring Security。
+6. 安全开发基线：所有外部输入必须校验；隶属用户的资源必须做归属权校验，严禁仅凭登录态操作他人数据；敏感数据（密码、身份证等）禁止明文存储、禁止输出到日志，前端展示与日志打印必须脱敏；SQL 必须参数绑定（MyBatis 用 `#{}`，禁止 `${}`），禁止字符串拼接；权限控制推荐 Spring Security；短信/支付等平台资源接口必须限流、冷却与人机校验；详见 `references/security.md`。
 7. 包名小写、点分隔符间有且仅有一个自然语义英语单词、单数形式。
 8. Entity 对应 Service 使用官方默认风格：接口继承 `IService<T>`，实现继承 `ServiceImpl<Mapper, T>`，通过 baseMapper 访问 Mapper；非 entity 对应的业务编排 Service（如 CommandService）使用纯接口风格，不继承 IService，通过构造器注入依赖。
 9. 日志输出基线：默认「控制台 + 滚动日志文件（按时间 + 大小切分）」；仅当明确要求关注/分离错误日志时，追加独立 ERROR 日志文件。统一使用 `src/main/resources/logback-spring.xml`，滚动策略用 `SizeAndTimeBasedRollingPolicy`（JDK 8/Spring Boot 2.x 与 JDK 17+/3.x 通用；禁用已弃用的 `SizeAndTimeBasedFNATP`）；详见 `references/logging.md`。
@@ -35,4 +35,5 @@ description: |
 | 单元测试原则（AIR/BCDE）、命名、粒度与位置、覆盖要求、数据与外部依赖策略、代码可测性、构建默认跳过测试配置 | `references/testing.md` |
 | 日志输出策略、Logback 配置、滚动/错误日志 | `references/logging.md` |
 | 工程编码统一 UTF-8、Windows 控制台乱码根治、pom/application.yml/launch.json/VSCode 终端编码配置 | `references/encoding.md` |
+| 代码安全（水平越权、CSRF、注入与 XSS 防御、敏感数据脱敏、接口防重放/防滥刷） | `references/security.md` |
 | 新建工程 README 交付、章节骨架、按项目类型裁剪、填写红线 | `doc-writing` 技能的 `references/readme-template.md`（未安装该技能时按核心铁律 12 的骨架生成） |
