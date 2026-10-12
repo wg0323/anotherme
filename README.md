@@ -33,6 +33,7 @@
 | `doc-writing` | doc_rule | Markdown 文档规范，附 README/CHANGELOG 模板（README 模板唯一真相源） |
 | `wx-miniapp` | wx_miniapp_rule | 微信小程序原生开发，Modern JS 语法强制约束、新建项目 README 交付约束 |
 | `uniapp-spec` | uniapp_rule | uni-app（Vue3+Vite）跨端项目规范与项目生成约束（含 README 交付） |
+| `test-execution` | 新增 | 测试与运行式验证的执行纪律：执行前预估耗时/产物、止损信号、停止后排查 |
 
 ## 支持的 IDE 与安装目录
 

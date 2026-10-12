@@ -34,3 +34,7 @@ src/test/java/com/example/user/service/impl/UserServiceImplTest.java
   - 金额计算、状态流转。
   - 边界条件、异常分支。
   - 公共工具类方法。
+
+## 运行测试的执行纪律
+
+本节只管"怎么写测试"；实际运行测试（如 `mvn test -Dmaven.test.skip=false`）时的执行前预估、止损判定与卡住排查，遵循 `test-execution` 技能。
