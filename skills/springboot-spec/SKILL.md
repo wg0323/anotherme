@@ -32,7 +32,7 @@ description: |
 | 工程根目录布局(src/db/docs/.vscode/pom.xml/target)、包结构、包职责、类命名 | `references/project-structure.md` |
 | RESTful URL、HTTP 方法、状态码 | `references/api-design.md` |
 | API 文档（Knife4j/OpenAPI3）选型、接入、注解、生产安全 | `references/api-doc.md` |
-| 单元测试命名、覆盖要求、构建默认跳过测试配置 | `references/testing.md` |
+| 单元测试原则（AIR/BCDE）、命名、粒度与位置、覆盖要求、数据与外部依赖策略、代码可测性、构建默认跳过测试配置 | `references/testing.md` |
 | 日志输出策略、Logback 配置、滚动/错误日志 | `references/logging.md` |
 | 工程编码统一 UTF-8、Windows 控制台乱码根治、pom/application.yml/launch.json/VSCode 终端编码配置 | `references/encoding.md` |
 | 新建工程 README 交付、章节骨架、按项目类型裁剪、填写红线 | `doc-writing` 技能的 `references/readme-template.md`（未安装该技能时按核心铁律 12 的骨架生成） |
