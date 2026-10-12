@@ -1,6 +1,6 @@
 # README.md 模板（唯一真相源）
 
-新建项目/工程交付自述文件时必须遵循本文件。`springboot-spec`、`uniapp-spec`、`wx-miniapp` 等技能内嵌的只是本文件的章节骨架摘要，措辞有出入时以本文件为准。
+新建项目/工程交付自述文件时必须遵循本文件。`springboot-spec`、`uniapp-spec`、`wx-miniapp-spec` 等技能内嵌的只是本文件的章节骨架摘要，措辞有出入时以本文件为准。
 
 ## 一、命名与位置（硬规则）
 

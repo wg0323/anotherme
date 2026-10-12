@@ -35,9 +35,13 @@ description: |
 ### README 交付
 
 - **文件名固定**：根目录 `README.md`（全大写 + `.md`），禁止 `readme.md`/`README.MD`/`README_CN.md`/`项目说明.md` 等变体。
-- **章节顺序固定**：项目名称 + 一句话描述 → 📋 目录 → 项目简介（含核心功能任务列表）→ 技术栈（分类/技术/版本表格）→ 项目结构（树形 + 目录职责）→ 环境要求 → 快速开始 → 配置说明（配置项/说明/默认值表格）→ 部署指南 → 接口地址与环境切换 → 常见问题；`更新日志`/`许可证` 仅在仓库确有 `CHANGELOG.md`/`LICENSE` 时保留，否则整节删除、禁止悬空链接。
-- **本栈差异项**：环境要求写 Node 版本 + HBuilderX 或 CLI 版本 + 微信开发者工具版本；快速开始写 `pnpm install` → `pnpm dev:h5` / `pnpm dev:mp-weixin`（并注明用微信开发者工具导入 `dist/dev/mp-weixin`）；配置说明写 `manifest.json` 的 appid 与 `config/` 各环境接口地址；模板中的 `API 文档` 章节改名为 `接口地址与环境切换`；部署指南写 H5 构建产物目录与小程序上传体验版流程；项目结构体现分包划分与主包 ≤2MB 约束。
-- **红线**：无实质内容的章节整节删除，禁止「待补充」空章节与占位假数据；命令必须与工程实际一致、可直接复制执行；完整模板见 `doc-writing` 技能的 `references/readme-template.md`，未安装该技能时按上述骨架生成。
+- 章节骨架、按项目类型裁剪与填写红线统一遵循 `doc-writing` 技能的 `references/readme-template.md`（唯一真相源，未安装该技能时按其骨架生成）。本栈差异项：
+  - 环境要求写 Node 版本 + HBuilderX 或 CLI 版本 + 微信开发者工具版本；
+  - 快速开始写 `pnpm install` → `pnpm dev:h5` / `pnpm dev:mp-weixin`（并注明用微信开发者工具导入 `dist/dev/mp-weixin`）；
+  - 配置说明写 `manifest.json` 的 appid 与 `config/` 各环境接口地址；
+  - 模板中的 `API 文档` 章节改名为 `接口地址与环境切换`；
+  - 部署指南写 H5 构建产物目录与小程序上传体验版流程；
+  - 项目结构体现分包划分与主包 ≤2MB 约束。
 
 ### 输出铁律
 

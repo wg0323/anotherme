@@ -29,6 +29,7 @@
 ```
 
 - **强制**：使用 `maven.test.skip=true`（同时跳过测试的**编译**与**执行**），而非仅 `skipTests=true`（只跳过执行、仍会编译测试代码）。这样才能在 `compile` 阶段也生效。
+- **目的边界**：此配置只为打包/构建提速，不降低测试要求——交付含核心业务逻辑的代码前，必须显式执行 `mvn test -Dmaven.test.skip=false` 并确认通过，禁止只写不跑。
 - **说明**：需要临时运行测试时（如 CI 流水线），命令行覆盖即可，无需改动 pom：`mvn test -Dmaven.test.skip=false` 或 `mvn install -Dmaven.test.skip=false`。
 - **说明**：此配置仅改变默认构建行为，不影响 `src/test` 下测试代码本身的编写与命名规范；下述规范在编写测试时仍须遵守。
 

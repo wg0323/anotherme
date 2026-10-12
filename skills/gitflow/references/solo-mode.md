@@ -85,8 +85,9 @@ git checkout master && git pull origin master
 
 # 2. 修改、自测 ...
 
-# 3. 提交并打 PATCH 版本 Tag
-git commit -am "fix(scope): 修复线上xxx问题" -m "Hotfix: true"
+# 3. 提交并打 PATCH 版本 Tag（git add . 而非 commit -am，确保新增文件不遗漏）
+git add .
+git commit -m "fix(scope): 修复线上xxx问题" -m "Hotfix: true"
 git tag -a v1.1.1 -m "Hotfix v1.1.1"
 git push origin master && git push origin v1.1.1
 ```

@@ -1,6 +1,6 @@
 # docs/ 目录组织规范（唯一真相源）
 
-任何项目（SpringBoot / uni-app / 微信小程序）组织 `docs/` 目录时都必须遵循本文件。`springboot-spec`、`uniapp-spec`、`wx-miniapp` 等技能内嵌的只是本文件的骨架摘要，措辞有出入时以本文件为准。
+任何项目（SpringBoot / uni-app / 微信小程序）组织 `docs/` 目录时都必须遵循本文件。`springboot-spec`、`uniapp-spec`、`wx-miniapp-spec` 等技能内嵌的只是本文件的骨架摘要，措辞有出入时以本文件为准。
 
 ## 一、进 docs 的判据（硬规则）
 

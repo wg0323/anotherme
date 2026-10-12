@@ -53,7 +53,5 @@ description: |
 
 | 场景 | 参考文件 |
 | ---- | -------- |
-| 面向对象/集合/并发/控制语句的推荐项细则 | `references/coding-spec.md` |
-| 命名、常量、格式的推荐项 | `references/naming-format.md` |
-| 注释规范与通用最佳实践 | `references/comment-practice.md` |
+| 面向对象/集合/并发/控制语句/注释的推荐项细则，命名、常量、格式的推荐项 | `references/coding-details.md` |
 | VSCode 中 Java Maven 项目初始化配置 | `references/vscode-setup.md` |

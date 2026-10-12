@@ -7,8 +7,9 @@
 - **规范**：日志中禁止直接打印消息体原文，避免敏感数据泄露；仅记录消息长度等元信息，如需排查再脱敏后以 UTF-8 解码落库。
 
 ```java
+// 基础示意版（仅记录日志，生产环境用下文的生产级版本）
 @Slf4j @Component
-public class RabbitConfirmCallback implements RabbitTemplate.ConfirmCallback {
+public class SimpleConfirmCallback implements RabbitTemplate.ConfirmCallback {
     @Override
     public void confirm(CorrelationData correlationData, boolean ack, String cause) {
         if (ack) {
@@ -70,15 +71,18 @@ public class RabbitConfirmCallback implements RabbitTemplate.ConfirmCallback {
 
     /**
      * ConfirmCallback 经 RabbitTemplateCustomizer 注入到 RabbitTemplate，
-     * 若再反向依赖 RabbitTemplate 会形成循环依赖，必须用 @Lazy 打破。
+     * 若再反向依赖 RabbitTemplate 会形成循环依赖，构造器参数上加 @Lazy 打破；
+     * 保持构造器注入，禁止字段注入（对齐 springboot-spec 核心铁律第 1 条）。
      */
-    @Lazy @Autowired
-    private RabbitTemplate rabbitTemplate;
+    private final RabbitTemplate rabbitTemplate;
 
     private final FailedMessageStore failedMessageStore;  // 失败消息落库兜底
     private final AlarmNotifier alarmNotifier;            // 告警组件
 
-    public RabbitConfirmCallback(FailedMessageStore failedMessageStore, AlarmNotifier alarmNotifier) {
+    public RabbitConfirmCallback(@Lazy RabbitTemplate rabbitTemplate,
+                                 FailedMessageStore failedMessageStore,
+                                 AlarmNotifier alarmNotifier) {
+        this.rabbitTemplate = rabbitTemplate;
         this.failedMessageStore = failedMessageStore;
         this.alarmNotifier = alarmNotifier;
     }
