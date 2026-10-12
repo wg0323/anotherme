@@ -3,7 +3,8 @@ name: doc-writing
 description: |
   项目文档编写规范。当用户涉及以下场景时必须使用本技能：
   编写或更新 README、CHANGELOG、使用指南、Markdown 形式的 API/架构文档，
-  新建工程/项目脚手架交付自述文件（README），组织文档目录结构，以及文档中代码示例的编写。
+  新建工程/项目脚手架交付自述文件（README），组织文档目录结构，文档中代码示例的编写，
+  以及要求文档贴近真人表达、去除模板化 AI 腔调时。
   不适用于 Knife4j/Swagger/OpenAPI3 等在线接口文档的生成与配置（归 springboot-spec）。
 ---
 
@@ -33,6 +34,14 @@ description: |
 - 架构图优先使用 Mermaid 代码块（内嵌于 Markdown）；截图存放于 `docs/images/` 目录，使用相对路径引用。
 - 文档中的外部链接应定期检查有效性，避免死链。
 
+## 语言与真实感
+
+- 动笔前先明确"谁读、读完能做成什么"；技术指南类开头直接给收益（读完你能……），不铺垫行业背景。
+- 具体优先：写真实版本号、路径、报错原文、实测数字，禁止 xxx/foo/TODO 等占位符与虚构引用。
+- 写真实场景与局限：前提条件、适用范围、已知的坑；不确定处如实说明。
+- 禁用 AI 套路：三件套列举、排比金句、"综上所述"式总结、空洞形容词（强大的/灵活的/无缝的）、"让我们……"、"希望对你有帮助"。
+- 交付前对照自查清单逐项检查；核心规则、禁止模式黑名单、结构自查、按文档类型的场景要求见 `references/human-writing.md`（唯一真相源）。
+
 ## 代码示例规范
 
 - 所有代码块必须标注语言类型（如 ```java、```json、```bash），禁止无语言标注的裸代码块。
@@ -48,3 +57,4 @@ description: |
 | 编写/交付 README（新建项目自述文件、章节骨架、按项目类型裁剪、填写红线） | `references/readme-template.md` |
 | 编写 CHANGELOG | `references/changelog-template.md` |
 | 组织 docs/ 目录（进/不进判据、满 3 份门槛、分类树） | `references/docs-structure.md` |
+| 文档语气与真实感（核心规则、禁止模式黑名单、交付前自查、按文档类型场景要求） | `references/human-writing.md` |
