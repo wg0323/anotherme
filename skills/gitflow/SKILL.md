@@ -21,7 +21,7 @@ description: |
 
 - 无法确定规模时，先询问用户「本项目是单人维护还是团队协作」，再生成命令。
 - 单人模式是 GitFlow 针对个人独立维护场景的官方简化分支，并非切换到其他工作流；其放宽条款（见下）在单人模式下优先于团队铁律。
-- commit message 规范（`references/commit-spec.md`）与语义化版本号规则两种模式通用。
+- commit message 必须使用简体中文（专有名词保留英文），并确保 UTF-8 无乱码；该规范与语义化版本号规则两种模式通用。
 - 一旦项目引入第二名开发者或 PR/CI 流程，立即切回团队模式。
 
 ## 单人简化规范（单人模式适用）
@@ -74,6 +74,6 @@ description: |
 | 场景 | 参考文件 |
 | ---- | -------- |
 | 单人模式完整简化流程与命令 | `references/solo-mode.md` |
-| 编写或检查 commit message（两种模式通用） | `references/commit-spec.md` |
+| 编写或检查 commit message：中文、专有名词保留英文、UTF-8 防乱码（两种模式通用） | `references/commit-spec.md` |
 | 团队模式：切分支、分支来源与生命周期、分支保护 | `references/branch-spec.md` |
 | 团队模式：版本号、打 Tag、发版、热修复完整流程 | `references/release-flow.md` |

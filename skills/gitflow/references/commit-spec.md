@@ -48,9 +48,9 @@ Closes #123
 ## subject 规则
 
 - **强制**：使用祈使句，首字母小写，结尾不加句号。
+- **强制**：使用简体中文描述，专有名词保留英文原文（参见「中文与编码要求」）。
 - **强制**：中文不超过 25 字，英文不超过 50 字符；优先保证语义完整，最长不超过 72 字符。
 - **强制**：准确描述本次提交做了什么。
-- **推荐**：使用中文描述。
 
 ```text
 ✅ feat(user): 新增用户头像上传功能
@@ -58,8 +58,46 @@ Closes #123
 ❌ feat(user): 新增了用户头像上传的功能并且支持了裁剪和压缩以及格式转换等...（超长且冗余）
 ```
 
+## 中文与编码要求
+
+### 语言
+
+- **强制**：subject 与 body 使用简体中文，禁止中英混杂式表述。
+
+  ```text
+  ✅ fix(order): 修复 Redis 缓存过期导致订单状态异常
+  ❌ fix(order): fix 了 Redis 缓存 expire 导致订单 status 异常
+  ```
+
+- **允许**：业界通用的专有名词、产品名、技术缩写保留英文原文，不强行翻译。
+
+常见保留英文的专有名词（非穷举；判断原则：业界有稳定英文写法的一律保留）：
+
+| 类别 | 示例 |
+| ---- | ---- |
+| 语言与框架 | Java、Python、Go、Spring Boot、Spring Cloud、MyBatis、Vue、React、uni-app |
+| 中间件与存储 | Redis、MySQL、MongoDB、Elasticsearch、Kafka、RabbitMQ、RocketMQ、Flink、Spark、Nginx |
+| 工程与运维 | Docker、Kubernetes、Jenkins、Maven、Gradle、Git、GitFlow、CI/CD、DevOps |
+| 通用技术术语 | API、SDK、SQL、JSON、HTTP、RESTful、JWT、OAuth、RPC、MQ、JVM、JDK、ORM、Cache、Token、Session、PR、Issue、Bug |
+
+### 编码与防乱码
+
+Windows 下中文乱码的根因是 message 实际编码与仓库声明不一致，按以下要求执行：
+
+1. **项目级声明 UTF-8**（禁止加 `--global`，避免污染全局环境）：
+
+   ```bash
+   git config i18n.commitEncoding utf-8
+   git config i18n.logOutputEncoding utf-8
+   ```
+
+2. **message 一律 UTF-8 无 BOM**：用编辑器编写时确认保存编码为 UTF-8。
+3. **提交渠道防损坏**：优先用编辑器提交；多行或含中文的信息写入 UTF-8 临时文件后 `git commit -F <文件>`，避免在 cmd 中用 `-m` 直接传长中文（cmd 默认 GBK 代码页易损坏传参）。
+4. **提交后自检**：`git log -1`（必要时 `git log -1 --encoding=utf-8`）确认中文显示正常，无 `????`、`�` 或乱码方块，异常时立即修正本次 message。
+
 ## body 规则
 
+- **强制**：默认使用简体中文，专有名词保留英文原文。
 - **推荐**：详细说明代码变动的动机和改动对比。
 - **推荐**：分条列出关键变更点。
 
