@@ -93,15 +93,15 @@ project-root/
 
 ### 后端启动
 
-```bash
-# 1. 导入数据库脚本
-mysql -u root -p < db/schema.sql
+```powershell
+# 1. 导入数据库脚本（PowerShell 不支持 < 输入重定向，通过 cmd 执行）
+cmd /c "mysql -u root -p < db\schema.sql"
 
 # 2. 修改配置（数据库/Redis 连接）
 # 文件：src/main/resources/application-dev.yml
 
-# 3. 启动
-mvn spring-boot:run
+# 3. 激活 dev Profile 启动
+mvn spring-boot:run "-Dspring-boot.run.profiles=dev"
 ```
 
 ### 前端启动
@@ -120,10 +120,10 @@ pnpm dev:mp-weixin   # 然后用微信开发者工具导入 dist/dev/mp-weixin
 
 ## 配置说明
 
-| 配置项                  | 说明       | 默认值    |
-| ----------------------- | ---------- | --------- |
-| spring.datasource.url   | 数据库连接 | -         |
-| redis.host              | Redis 地址 | localhost |
+| 配置项 | 说明 | 默认值 |
+| ---- | ---- | ---- |
+| `spring.datasource.url` | 数据库连接 | - |
+| `spring.data.redis.host`（Boot 3.x）/ `spring.redis.host`（Boot 2.x） | Redis 地址 | localhost |
 
 ## 部署指南
 
@@ -151,7 +151,7 @@ A: 解决方法...
 
 | 项目类型                | 省略内容                       | 章节改名                                       | 必填差异项                                                                                                                       |
 | ----------------------- | ------------------------------ | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| 纯后端工程（SpringBoot） | 「快速开始」的前端/小程序小节   | -                                              | 环境要求写 JDK/Maven/MySQL/Redis 实际版本；快速开始按「导入 SQL → 改 `application-dev.yml` → `mvn spring-boot:run`」；API 文档写实际 `doc.html` 地址并说明生产环境关闭方式；部署指南写 `mvn package` + `java -jar` 与日志路径 |
+| 纯后端工程（SpringBoot） | 「快速开始」的前端/小程序小节   | -                                              | 环境要求写 JDK/Maven/MySQL/Redis 实际版本；快速开始按「导入 SQL → 改 `application-dev.yml` → 激活 dev Profile 启动」给出当前终端可执行命令；API 文档写实际 `doc.html` 地址并说明生产环境关闭方式；部署指南写 `mvn package` + `java -jar` 与日志路径 |
 | uni-app 项目            | 「API 文档」                    | `API 文档` → `接口地址与环境切换`               | 环境要求写 Node + HBuilderX 或 CLI + 微信开发者工具版本；快速开始写 `pnpm install` → `pnpm dev:h5` / `pnpm dev:mp-weixin`（注明用微信开发者工具导入 `dist/dev/mp-weixin`）；配置说明写 `manifest.json` 的 appid 与 `config/` 各环境接口地址；项目结构体现分包划分与主包 ≤2MB |
 | 微信小程序              | 「API 文档」                    | `API 文档` → `接口地址与环境切换`；`部署指南` → `上传与发布` | 环境要求写微信开发者工具版本 + 最低基础库版本 + AppID；快速开始写「导入项目根目录 → 填写 AppID →（用 npm 时）构建 npm → 编译预览」；配置说明写 `config/` 各环境 URL 与 `project.config.json` 的 appid/setting；项目结构体现 `pages`/`components`/`api`/`config`/`static` |
 | monorepo 根 README      | -                              | -                                              | 项目结构列出全部模块；快速开始按 `### 后端启动` / `### 前端启动` / `### uni-app / 小程序` 分小节；技术栈表合并列出各端 |

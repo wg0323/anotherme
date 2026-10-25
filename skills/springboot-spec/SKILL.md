@@ -22,12 +22,12 @@ description: |
 9. 日志输出基线：默认「控制台 + 滚动日志文件（按时间 + 大小切分）」；仅当明确要求关注/分离错误日志时，追加独立 ERROR 日志文件。统一使用 `src/main/resources/logback-spring.xml`，滚动策略用 `SizeAndTimeBasedRollingPolicy`（JDK 8/Spring Boot 2.x 与 JDK 17+/3.x 通用；禁用已弃用的 `SizeAndTimeBasedFNATP`）；详见 `references/logging.md`。
 10. API 文档基线：对外接口必须提供在线文档，统一使用 Knife4j（基于 springdoc-openapi / OpenAPI3），注解用 `@Tag`/`@Operation`/`@Schema`；禁止已停更的 springfox（Boot 2.6+ 启动崩溃、Boot 3.x 不兼容）。Boot 3.x 依赖必须带 `jakarta` 后缀；原版 `com.github.xiaoymin` 4.5.0 适配 Boot 2.6~3.3，Boot 3.4/3.5+ 换社区 fork `com.baizhukui` 5.x（drop-in，仅改 groupId）。生产环境必须用 `knife4j.production=true` 或鉴权关闭文档裸奔；详见 `references/api-doc.md`。
 11. 构建默认跳过测试（目的仅是打包提速，不降低测试要求）：新建工程在 `pom.xml` 的 `<properties>` 中配置 `<maven.test.skip>true</maven.test.skip>`，使 `mvn compile`/`package`/`install` 全程自动跳过测试的编译与执行，无需每次手动加 `-DskipTests`；运行测试不改 pom，命令行覆盖即可：`mvn test -Dmaven.test.skip=false`。交付含核心业务逻辑的代码前，必须用该命令显式运行并通过对应测试，禁止只写不跑（执行纪律遵循 test-execution 技能）；详见 `references/testing.md`。
-12. 新建工程必须交付自述文件：工程根目录固定输出 `README.md`（全大写 + `.md`），章节骨架、按项目类型裁剪与填写红线统一遵循 `doc-writing` 技能的 `references/readme-template.md`（唯一真相源，未安装该技能时按其骨架生成）。本栈差异项：环境要求写 JDK/Maven/MySQL/Redis 实际版本；快速开始按「导入 SQL → 改 `application-dev.yml` → `mvn spring-boot:run`」给出可直接复制执行的命令；配置说明列 `spring.datasource.*`、`redis.*` 等实际关键项；API 文档写实际访问地址 `http://localhost:{server.port}/doc.html` 并说明生产环境用 `knife4j.production=true` 关闭；部署指南写 `mvn package` + `java -jar` 与日志路径；纯后端工程省略前端/小程序启动小节。
+12. 新建工程必须交付自述文件：工程根目录固定输出 `README.md`（全大写 + `.md`），章节骨架、按项目类型裁剪与填写红线统一遵循 `doc-writing` 技能的 `references/readme-template.md`（唯一真相源，未安装该技能时按其骨架生成）。本栈差异项：环境要求写 JDK/Maven/MySQL/Redis 实际版本；快速开始按「导入 SQL → 改 `application-dev.yml` → 激活 dev Profile 启动」给出当前终端可直接复制执行的命令；配置说明列 `spring.datasource.*` 及 Boot 3.x 的 `spring.data.redis.*`、Boot 2.x 的 `spring.redis.*` 等实际关键项；API 文档写实际访问地址 `http://localhost:{server.port}/doc.html` 并说明生产环境用 `knife4j.production=true` 关闭；部署指南写 `mvn package` + `java -jar` 与日志路径；纯后端工程省略前端/小程序启动小节。
 13. 工程编码统一 UTF-8（根治 Windows 控制台乱码）：新建工程必须在五处同时对齐 UTF-8——① 源文件（VSCode `files.encoding=utf8`）；② 构建（`pom.xml` 的 `project.build.sourceEncoding`）；③ HTTP（`application.yml` 的 `server.servlet.encoding`）；④ JVM 输出（`.vscode/launch.json` 的 `vmArgs` + `console: integratedTerminal`）；⑤ 终端代码页（终端 profile 启动即 `chcp 65001`），缺一处都可能残留乱码。控制台乱码根因是「JVM 输出编码（写入端）与终端代码页（解读端）不匹配」，`application.yml` 只管 HTTP、`pom.xml` 只管构建，均无法根治控制台乱码；Debug Console（`internalConsole`）中文乱码为已知无解限制，必须走集成终端。五处具体配置、按 JDK 版本（8~17 与 18+）的 `vmArgs` 差异、验证清单与常见坑详见 `references/encoding.md`。
 
 ## 新建工程骨架（强制产出清单）
 
-新建工程或新增业务模块时按下列骨架产出文件，缺一即视为不合规（`{Entity}` 换实际实体名，完整包布局见 `references/project-structure.md`）：
+新建 Entity 绑定的 CRUD 工程或业务模块时按下列骨架产出文件，缺一即视为不合规（`{Entity}` 换实际实体名，完整包布局见 `references/project-structure.md`）。纯编排、定时任务、消息消费等非 CRUD 模块按实际职责选择 Controller、Service、Mapper 等类型，不强制创造无用途的 Entity 或空目录：
 
 ```text
 src/main/java/{basePackage}/

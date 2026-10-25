@@ -2,7 +2,7 @@
 
 > **适用场景**：项目仅由 1 名开发者独立维护（前端 / 后端均适用），无并行协作、无 PR 评审、无强制 CI。
 >
-> 本规范是 GitFlow 针对单人维护场景的**官方简化分支**，去掉团队协作开销，但保留 GitFlow 的核心价值：master 为生产稳定基线、语义化版本号、Tag 绑定发布、hotfix 补丁概念。
+> 本规范是本仓库针对单人维护定义的 **GitFlow 简化变体**，去掉团队协作开销，但保留 GitFlow 的核心价值：master 为生产稳定基线、语义化版本号、Tag 绑定发布、hotfix 补丁概念。
 >
 > commit message 规范见 `commit-spec.md`，语义化版本号规则见 `release-flow.md`，两者两种模式通用。
 
@@ -100,4 +100,4 @@ git push origin master && git push origin v1.1.1
 2. commit message 严格遵循 `commit-spec.md`。
 3. 版本号严格遵循语义化规范，Tag 与发布点一一绑定。
 4. 高风险操作二次确认：删除分支、force push、rebase 已推送提交、创建 / 删除 Tag。
-5. 生成命令前先确认确为单人维护；一旦项目引入第二名开发者或 PR/CI 流程，立即切回团队模式完整 GitFlow（见 `branch-spec.md`、`release-flow.md`）。
+5. 生成命令前先确认确为单人维护；一旦项目引入第二名开发者、PR/代码评审或强制 CI，立即切回团队模式完整 GitFlow（见 `branch-spec.md`、`release-flow.md`）。

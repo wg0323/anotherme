@@ -31,7 +31,7 @@
 | `external-research` | common_rule（节选） | 外部信息检索：工具命令/版本兼容/配置项/报错排查等场景，官方来源优先，辅助资料须交叉验证 |
 | `db-spec` | db_rule | 建表/索引/SQL/ORM 规约，附标准建表 DDL 模板 |
 | `doc-writing` | doc_rule | Markdown 文档规范，附 README/CHANGELOG 模板（README 模板唯一真相源） |
-| `wx-miniapp` | wx_miniapp_rule | 微信小程序原生开发，Modern JS 语法强制约束、新建项目 README 交付约束 |
+| `wx-miniapp-spec` | wx_miniapp_rule | 微信小程序原生开发，Modern JS 语法强制约束、新建项目 README 交付约束 |
 | `uniapp-spec` | uniapp_rule | uni-app（Vue3+Vite）跨端项目规范与项目生成约束（含 README 交付） |
 | `ui-fidelity` | 新增 | 开源前端模板二次开发的界面保真（PC 后台 + 移动端）：模板接入侦察、基准页锚定、资产白名单、禁止清单、交付自检 |
 | `test-execution` | 新增 | 测试与运行式验证的执行纪律：执行前预估耗时/产物、止损信号、停止后排查、收尾清理自产进程与临时产物 |

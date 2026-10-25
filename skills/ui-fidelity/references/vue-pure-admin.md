@@ -1,6 +1,6 @@
 # vue-pure-admin 实例细则
 
-> 事实来源：`pure-admin/vue-pure-admin` main 分支（`package.json` 版本 7.0.0）的 `src/style/tailwind.css`、`src/style/theme.scss`、`src/views/system/user/index.vue`、`stylelint.config.js`。
+> 版本基准：`pure-admin/vue-pure-admin` 的 `v7.0.0` tag。复核时固定读取该 tag 的 `src/style/tailwind.css`、`src/style/theme.scss`、`src/views/system/user/index.vue`、`stylelint.config.js`，不要使用会持续变化的 main 分支。
 > **使用前先核对项目自身版本**：v7 起样式方案为 Tailwind CSS 4；v6 及更早多为 Tailwind CSS 3 + `tailwind.config.ts`，语法不同（见第 4 节对照表）。以项目 `package.json` 里的 `tailwindcss` 版本为准，冲突时以项目内实际代码为最高依据。
 
 ## 1. 样式体系是三层，不是一层
@@ -37,7 +37,7 @@ Tailwind @theme 映射（--color-*）       ← src/style/tailwind.css，生成 
 | `text-text_color_primary` | `--el-text-color-primary` | 正文主色 |
 | `text-text_color_regular` | `--el-text-color-regular` | 次要文字 |
 
-更多颜色一律走 Element Plus 变量，例如 `var(--el-fill-color-light)`、`var(--el-border-color-lighter)`、`var(--el-text-color-secondary)`。
+更多颜色使用 Element Plus 变量，例如 `var(--el-fill-color-light)`、`var(--el-border-color-lighter)`、`var(--el-text-color-secondary)`；实际允许使用的变量必须逐项登记到项目基线白名单，未登记不得使用。
 
 **禁止**：`#409eff`、`rgb(...)`、`bg-white`、`text-gray-500`、`border-slate-200`。Tailwind 默认色板不参与主题切换，暗色模式下会变成刺眼的白块。
 
@@ -47,21 +47,50 @@ Tailwind @theme 映射（--color-*）       ← src/style/tailwind.css，生成 
 
 ```vue
 <script setup lang="ts">
+import { ref } from "vue";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
+import Refresh from "~icons/ep/refresh";
+import AddFill from "~icons/ri/add-fill";
 import { useXxx } from "./utils/hook";   // 表单、列定义、请求都放在 hook 里
 
 defineOptions({ name: "XxxManage" });     // 必填，与路由 name 对应
+
+const formRef = ref();
+const {
+  form,
+  loading,
+  columns,
+  dataList,
+  pagination,
+  onSearch,
+  resetForm,
+  openDialog,
+  handleSizeChange,
+  handleCurrentChange
+} = useXxx(formRef);
 </script>
 
 <template>
-  <el-form :inline="true" class="search-form bg-bg_color w-full pl-8 pt-3 overflow-auto">
+  <el-form
+    ref="formRef"
+    :model="form"
+    :inline="true"
+    class="search-form bg-bg_color w-full pl-8 pt-3 overflow-auto"
+  >
     <!-- 每个查询项用 class="w-45!" 固定宽度 -->
     <el-form-item label="名称：" prop="name">
       <el-input v-model="form.name" placeholder="请输入名称" clearable class="w-45!" />
     </el-form-item>
     <el-form-item>
-      <el-button type="primary" :icon="useRenderIcon('ri/search-line')" :loading="loading">搜索</el-button>
+      <el-button
+        type="primary"
+        :icon="useRenderIcon('ri/search-line')"
+        :loading="loading"
+        @click="onSearch"
+      >
+        搜索
+      </el-button>
       <el-button :icon="useRenderIcon(Refresh)" @click="resetForm(formRef)">重置</el-button>
     </el-form-item>
   </el-form>
@@ -82,6 +111,8 @@ defineOptions({ name: "XxxManage" });     // 必填，与路由 name 对应
         :columns="dynamicColumns"
         :pagination="{ ...pagination, size }"
         :header-cell-style="{ background: 'var(--el-fill-color-light)', color: 'var(--el-text-color-primary)' }"
+        @page-size-change="handleSizeChange"
+        @page-current-change="handleCurrentChange"
       />
     </template>
   </PureTableBar>
@@ -189,4 +220,4 @@ defineOptions({ name: "XxxManage" });     // 必填，与路由 name 对应
 
 ## 8. 工程校验
 
-项目自带 `pnpm lint`（eslint + prettier + stylelint），其中 stylelint 使用 `stylelint-config-recess-order` 强制属性排序、`prettier/prettier` 强制格式。交付前必须运行并通过，不要手写与 lint 规则冲突的样式块。
+原模板自带 `pnpm lint`（eslint + prettier + stylelint），其中 stylelint 使用 `stylelint-config-recess-order` 强制属性排序、`prettier/prettier` 强制格式。二开项目仍配置该命令时，交付前必须运行并通过；已移除或未配置时标记不适用，不要为了检查重新引入工具。
