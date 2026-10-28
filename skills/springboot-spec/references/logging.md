@@ -4,7 +4,8 @@
 
 - **默认**：控制台 + 滚动日志文件（按**时间 + 大小**切分）。
 - **仅当明确要求关注/分离错误日志时**：在默认基础上追加一个独立的 ERROR 日志文件。
-- **配置文件**：统一放在 `src/main/resources/logback-spring.xml`（推荐带 `-spring` 后缀，才能使用 `<springProfile>`、`<springProperty>`；`logback.xml` 会被 Logback 在 Spring Boot 初始化前直接加载，导致这些扩展标签失效）。
+- **配置文件（强制）**：固定产出 `src/main/resources/logback-spring.xml`，禁用 `logback.xml`（后者会在 Spring Boot 初始化前直接加载，`<springProfile>`/`<springProperty>` 全部失效）。`application.yml` 的 `logging.*` 只负责路径与级别覆盖，不能替代 XML 交付物。
+- **XML 结构（强制）**：必须 `include org/springframework/boot/logging/logback/defaults.xml`，encoder 的 pattern 使用内置 `${CONSOLE_LOG_PATTERN}` / `${FILE_LOG_PATTERN}`，禁止自定义 `LOG_PATTERN` 变量（否则丢掉 Spring Boot 的默认格式与颜色规则，`logging.pattern.*` 也会失效）。
 - **代码层日志写法**：见 `SKILL.md` 核心铁律第 4 条（SLF4J + `{}` 占位符 + 异常对象末位传参）。
 
 ## 版本适配（JDK 8 / Spring Boot 2.x 与 JDK 17+ / Spring Boot 3.x）
@@ -32,25 +33,21 @@
 
 ## 方案一：默认输出（控制台 + 文件，时间 + 大小切分）
 
-### 首选：纯 YAML，无需写 XML
+### 交付物：logback-spring.xml（新建工程必须产出）
 
-Spring Boot 默认 logback 配置已内置「控制台 + `SizeAndTimeBasedRollingPolicy`」，只需用属性驱动即可：
+XML 是唯一交付物，appender、滚动策略、编码全部在 XML 内定义（模板见「XML 模板」一节）；下面的 `application.yml` 片段只是可选的路径/级别覆盖，缺失不影响 XML 生效。
+
+### 可选覆盖：application.yml（只管路径与级别）
 
 ```yaml
 logging:
-  file:
-    name: ./logs/app.log
   level:
     root: info
-  logback:
-    rollingpolicy:
-      max-file-size: 10MB      # 单个活动文件达到该大小即按 %i 切分
-      max-history: 90          # 归档最多保留最近 90 天（滚动周期数）
-      total-size-cap: 1GB      # 归档总大小上限，超出删除最旧文件
-      # file-name-pattern 可选，默认 ${LOG_FILE}.%d{yyyy-MM-dd}.%i.gz
+  # 注意：自定义 logback-spring.xml 后，logging.logback.rollingpolicy.* 不再生效，
+  # 滚动策略只能在 XML 中定义，YAML 里禁止重复配置
 ```
 
-### 备选：logback-spring.xml（与方案二保持同一份配置时使用）
+### XML 模板（方案一与方案二共用）
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -67,12 +64,12 @@ logging:
         </encoder>
     </appender>
 
-    <!-- 文件输出：时间 + 大小滚动 -->
+    <!-- 文件输出：时间 + 大小滚动。路径写死，避免未配 logging.file.name 时 ${LOG_FILE} 解析为空 -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_FILE}</file>
+        <file>logs/app.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <!-- 时间 + 大小滚动，fileNamePattern 必须包含 %i -->
-            <fileNamePattern>${LOG_FILE}.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>logs/app.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
             <maxFileSize>10MB</maxFileSize>
             <maxHistory>90</maxHistory>
             <totalSizeCap>1GB</totalSizeCap>
@@ -98,18 +95,14 @@ logging:
 ```yaml
 logging:
   file:
-    name: ./logs/app.log
+    name: ./logs/app.log        # 方案二 XML 用 ${LOG_FILE} 时需要
   # 自定义错误日志路径（非 Spring Boot 标准属性，通过 springProperty 读取）
   error:
     file:
       name: ./logs/app-error.log
   level:
     root: info
-  logback:
-    rollingpolicy:
-      max-file-size: 10MB
-      max-history: 90
-      total-size-cap: 1GB
+  # 滚动策略在 XML 中定义，logging.logback.rollingpolicy.* 在自定义 XML 下不生效
 ```
 
 ```xml
