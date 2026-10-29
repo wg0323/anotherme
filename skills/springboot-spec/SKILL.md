@@ -3,7 +3,7 @@ name: springboot-spec
 description: |
   SpringBoot 后端工程规范。当用户涉及以下场景时必须使用本技能：
   新建/搭建 SpringBoot 工程或模块、初始化后端项目、生成 CRUD 与脚手架代码、划分包结构、
-  编写 Controller/Service/Mapper、设计 RESTful API、生成 API 接口文档（Knife4j/Swagger/OpenAPI3）、依赖注入、日志输出与 Logback 配置、异常处理、数据安全、编写单元测试、工程编码统一 UTF-8 与 Windows 控制台乱码排查。
+  编写 Controller/Service/Mapper、设计 RESTful API、生成 API 接口文档（Knife4j/Swagger/OpenAPI3，Controller 强制标注 @Tag/@Operation/@Parameter/@ApiResponse）、依赖注入、日志输出与 Logback 配置、异常处理、数据安全、编写单元测试、工程编码统一 UTF-8 与 Windows 控制台乱码排查。
   适用于 SpringBoot + MyBatis/MyBatis-Plus 技术栈的 Java 后端开发。
 ---
 
@@ -20,7 +20,7 @@ description: |
 7. 包名小写、点分隔符间有且仅有一个自然语义英语单词、单数形式。
 8. Service 分层强制：所有业务 Service 一律「接口 + 实现」两个文件，接口在 `service` 包、实现在 `service.impl` 包；**禁止只产出无接口的 `@Service public class XxxService`**。Entity 对应 Service 的接口继承 `IService<T>`、实现继承 `ServiceImpl<Mapper, T>`，通过 baseMapper 访问 Mapper；非 entity 对应的业务编排 Service（如 CommandService）为纯接口，不继承 IService，通过构造器注入依赖。本约定是团队分层规范，不适用「避免过度封装 / 只写最少代码」的简化判断。
 9. 日志输出基线：默认「控制台 + 滚动日志文件（按时间 + 大小切分）」；仅当明确要求关注/分离错误日志时，追加独立 ERROR 日志文件。统一使用 `src/main/resources/logback-spring.xml`，必须 `include org/springframework/boot/logging/logback/defaults.xml` 并使用内置 `${CONSOLE_LOG_PATTERN}`/`${FILE_LOG_PATTERN}`（禁止自定义 pattern 变量），滚动策略用 `SizeAndTimeBasedRollingPolicy`（JDK 8/Spring Boot 2.x 与 JDK 17+/3.x 通用；禁用已弃用的 `SizeAndTimeBasedFNATP`）；详见 `references/logging.md`。
-10. API 文档基线：对外接口必须提供在线文档，统一使用 Knife4j（基于 springdoc-openapi / OpenAPI3），注解用 `@Tag`/`@Operation`/`@Schema`；禁止已停更的 springfox（Boot 2.6+ 启动崩溃、Boot 3.x 不兼容）。Boot 3.x 依赖必须带 `jakarta` 后缀；原版 `com.github.xiaoymin` 4.5.0 适配 Boot 2.6~3.3，Boot 3.4/3.5+ 换社区 fork `com.baizhukui` 5.x（drop-in，仅改 groupId）。生产环境必须用 `knife4j.production=true` 或鉴权关闭文档裸奔；详见 `references/api-doc.md`。
+10. API 文档与 Controller 注解基线（强制）：对外接口必须提供在线文档，统一使用 Knife4j（基于 springdoc-openapi / OpenAPI3）。**所有 Controller 类必须有 `@Tag`，每个映射方法必须有 `@Operation`，每个路径变量/查询参数/请求头必须有 `@Parameter`，每个方法至少一条 `@ApiResponse` 描述成功返回**；请求体不给参数加 `@Parameter`，由 DTO 的 `@Schema` 描述类与字段；`pom.xml` 必须开启 `-parameters`，否则参数名丢失。缺任一项视为不合规，不得交付。Swagger 注解包在 Boot 2.x 与 3.x 完全一致（`io.swagger.v3.oas.annotations.*`），换版本只换依赖坐标与 `javax`/`jakarta` 校验包，不换注解；禁止已停更的 springfox（Boot 2.6+ 启动崩溃、Boot 3.x 不兼容）。Boot 3.x 依赖必须带 `jakarta` 后缀；原版 `com.github.xiaoymin` 4.5.0 适配 Boot 2.6~3.3，Boot 3.4/3.5+ 换社区 fork `com.baizhukui` 5.x（drop-in，仅改 groupId）。生产环境必须用 `knife4j.production=true` 或鉴权关闭文档裸奔；强制清单 C1~C6、逐参数写法与自检命令详见 `references/api-doc.md`。
 11. 构建默认跳过测试（目的仅是打包提速，不降低测试要求）：新建工程在 `pom.xml` 的 `<properties>` 中配置 `<maven.test.skip>true</maven.test.skip>`，使 `mvn compile`/`package`/`install` 全程自动跳过测试的编译与执行，无需每次手动加 `-DskipTests`；运行测试不改 pom，命令行覆盖即可：`mvn test -Dmaven.test.skip=false`。交付含核心业务逻辑的代码前，必须用该命令显式运行并通过对应测试，禁止只写不跑（执行纪律遵循 test-execution 技能）；详见 `references/testing.md`。
 12. 新建工程必须交付自述文件：工程根目录固定输出 `README.md`（全大写 + `.md`），章节骨架、按项目类型裁剪与填写红线统一遵循 `doc-writing` 技能的 `references/readme-template.md`（唯一真相源，未安装该技能时按其骨架生成）。本栈差异项：环境要求写 JDK/Maven/MySQL/Redis 实际版本；快速开始按「导入 SQL → 改 `application-dev.yml` → 激活 dev Profile 启动」给出当前终端可直接复制执行的命令；配置说明列 `spring.datasource.*` 及 Boot 3.x 的 `spring.data.redis.*`、Boot 2.x 的 `spring.redis.*` 等实际关键项；API 文档写实际访问地址 `http://localhost:{server.port}/doc.html` 并说明生产环境用 `knife4j.production=true` 关闭；部署指南写 `mvn package` + `java -jar` 与日志路径；纯后端工程省略前端/小程序启动小节。
 13. 工程编码统一 UTF-8（根治 Windows 控制台乱码）：新建工程必须在五处同时对齐 UTF-8——① 源文件（VSCode `files.encoding=utf8`）；② 构建（`pom.xml` 的 `project.build.sourceEncoding`）；③ HTTP（`application.yml` 的 `server.servlet.encoding`）；④ JVM 输出（`.vscode/launch.json` 的 `vmArgs` + `console: integratedTerminal`）；⑤ 终端代码页（终端 profile 启动即 `chcp 65001`），缺一处都可能残留乱码。控制台乱码根因是「JVM 输出编码（写入端）与终端代码页（解读端）不匹配」，`application.yml` 只管 HTTP、`pom.xml` 只管构建，均无法根治控制台乱码；Debug Console（`internalConsole`）中文乱码为已知无解限制，必须走集成终端。五处具体配置、按 JDK 版本（8~17 与 18+）的 `vmArgs` 差异、验证清单与常见坑详见 `references/encoding.md`。
@@ -67,3 +67,4 @@ src/main/java/{basePackage}/
 5. 日志使用 `@Slf4j` 与 `{}` 占位符，无 `System.out`、`e.printStackTrace()`、字符串拼接日志。
 6. 对象转换都在 `converter` 包的 `XxxConverter` 静态方法中，Controller/Service 无内联字段拷贝，`pom.xml` 未引入 MapStruct。
 7. 新建工程已产出 `src/main/resources/logback-spring.xml`（已 include `defaults.xml` 并使用内置 `${CONSOLE_LOG_PATTERN}`/`${FILE_LOG_PATTERN}`，CONSOLE + 滚动 FILE，`SizeAndTimeBasedRollingPolicy`），应用启动后 `logs/` 目录下日志文件已落盘。
+8. 每个 Controller 类有 `@Tag`，每个映射方法有 `@Operation` 与至少一条 `@ApiResponse`，每个路径变量/查询参数/请求头有 `@Parameter`，请求体 DTO 及其字段有 `@Schema`，`pom.xml` 已开启 `-parameters`。
