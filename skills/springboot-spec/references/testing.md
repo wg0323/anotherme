@@ -80,4 +80,4 @@ src/test/java/com/example/user/service/impl/UserServiceImplTest.java
 
 ## 运行测试的执行纪律
 
-本节只管"怎么写测试"；实际运行测试（如 `mvn test -Dmaven.test.skip=false`）时的执行前预估、止损判定与卡住排查，遵循 `test-execution` 技能。
+本节只管"怎么写测试"；实际运行测试（如 `mvn test -Dmaven.test.skip=false`）时该测多大范围（全量 / 冒烟 / 受影响子集）、执行前预估、止损判定与卡住排查，遵循 `test-execution` 技能。
