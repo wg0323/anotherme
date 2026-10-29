@@ -27,6 +27,7 @@
 | `rabbitmq-reliability` | rabbitmq_rule | SpringBoot 接入 RabbitMQ，消息不丢不重，含完整样例代码与检查清单 |
 | `springboot-spec` | springboot_rule | SpringBoot 工程结构、RESTful API、依赖注入、日志异常、单测、新建工程 README 交付 |
 | `java-spec` | java_rule + vscode_rule | Java 编码强制规范；VSCode Maven 项目初始化配置 |
+| `frontend-spec` | 阿里巴巴前端规约 | HTML / CSS / JS / TS / React / Node.js 编码规范，含通用格式与前端安全基线 |
 | `solution-design` | common_rule（节选） | 需求方案设计：搜索先行禁止臆造、开源选型细则、输出要求 |
 | `external-research` | common_rule（节选） | 外部信息检索：工具命令/版本兼容/配置项/报错排查等场景，官方来源优先，辅助资料须交叉验证 |
 | `db-spec` | db_rule | 建表/索引/SQL/ORM 规约，附标准建表 DDL 模板 |
