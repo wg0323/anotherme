@@ -5,7 +5,9 @@ chcp 65001 >nul
 rem ============================================================
 rem  anotherme skill installer
 rem  Mounts every skill under skills\ into each IDE's skills
-rem  directory via NTFS directory junction.
+rem  directory via NTFS directory junction, then syncs the
+rem  always_on rule copy (docs\common_rule.md) into each IDE's
+rem  rule directory.
 rem
 rem  Usage:
 rem    install.bat                 Install to all detected IDEs
@@ -71,6 +73,19 @@ call :install_ide claude    "%USERPROFILE%\.claude\skills"
 echo.
 echo ==================== Summary ====================
 echo Installed: %INSTALLED%    Skipped: %SKIPPED%    Failed: %FAILED%
+
+echo.
+rem rules are copy-installed (not junctioned), so sync them here instead of
+rem leaving a stale copy behind after every docs\common_rule.md edit
+if defined CUSTOM_DIR (
+    echo [rules] skipped: custom --dir in use, run scripts\sync-rules.bat manually
+    exit /b 0
+)
+if defined ONLY (
+    call "%~dp0sync-rules.bat" --only=!ONLY!
+) else (
+    call "%~dp0sync-rules.bat"
+)
 exit /b 0
 
 rem ---------- subroutines ----------

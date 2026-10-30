@@ -6,6 +6,30 @@ trigger: always_on
 - 始终使用中文回复用户，但技术专有名词可保留英文（如 API、Python等）。
 - 需求落地与技术方案设计（搜索先行、开源选型）遵循 `solution-design` 技能。
 
+## 规范技能强制加载（门禁）
+
+**产出或修改下列对象前，必须先加载对应技能正文，再动手。**
+
+| 即将产出 / 修改的对象 | 必须先加载 |
+| --- | --- |
+| 任何 `.java` 源文件（新建、修改、重构、审查） | `java-spec` |
+| Spring Boot 工程/模块、Controller/Service/Mapper/DTO/Entity、`pom.xml`、`application*.yml`、`logback-spring.xml` | `springboot-spec`（同时加载 `java-spec`） |
+| 建表 DDL、字段类型、索引、SQL、MyBatis 映射 | `db-spec` |
+| HTML / CSS/SCSS / JS / TS / React / Node.js 源码 | `frontend-spec` |
+| uni-app 项目页面与组件 | `uniapp-spec`（同时加载 `frontend-spec`、`ui-fidelity`） |
+| 微信小程序原生页面与组件 | `wx-miniapp-spec`（同时加载 `ui-fidelity`） |
+| 既有后台模板（vue-pure-admin 等）中改页面、组件、样式 | `ui-fidelity`（同时加载 `frontend-spec`） |
+| README / CHANGELOG / 使用指南 / Markdown 文档 | `doc-writing` |
+| commit message、分支、合并、发布、tag | `gitflow` |
+| RabbitMQ 接入、收发消息、声明 Exchange/Queue/Binding | `rabbitmq-reliability` |
+| 运行测试、启动服务验证、等待异步任务完成 | `test-execution` |
+| 新需求落地、模块/架构设计、技术选型 | `solution-design`（外部信息检索见上节） |
+
+- 本节是**既定合规成本**，不参与任何收益、复杂度、简洁性或"是否过度设计"的裁决；不得以"任务很小""内容我已掌握""加载成本高于收益"为由跳过。
+- 触发判据是**即将产出的对象类型**，不是用户的措辞；用户只说"帮我搞个订单功能"时，也按实际产出的文件类型加载。
+- 动手前在回复首句声明本次命中的技能清单，再开始产出。
+- 多个技能同时命中时全部加载；技能未安装时按名称提示用户，不得静默跳过后自行发挥。
+
 ## 外部信息检索
 
 **需要外部权威信息时：先查官方来源；官方结果不理想时，才降级参考辅助性质的博客/社区文章。**
@@ -48,6 +72,8 @@ trigger: always_on
 
 自我校验：资深工程师会不会觉得这段代码过度复杂？如果答案是肯定的，就简化代码。
 
+**边界**：本节约束的是产出代码的实现方式；规范类技能的加载与遵守不在此范围，技能成本由用户预先承担，不参与"是否值得"的权衡。
+
 ### 精准局部修改
 
 **只改动必要代码；仅清理自身修改产生的冗余内容。**
@@ -56,7 +82,7 @@ trigger: always_on
 
 - 不擅自优化无关代码、注释、代码格式；
 - 不对无故障的逻辑做重构；
-- 统一沿用项目现有代码风格，即便你有不同编写习惯；
+- 统一沿用项目现有代码风格，即便你有不同编写习惯；但与规范技能的强制条款冲突时，以技能为准；
 - 发现无关的废弃代码仅做标注提醒，不要直接删除。
 
 若你的修改产生了废弃内容：

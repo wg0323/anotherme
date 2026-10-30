@@ -15,8 +15,10 @@
 │   ├── gitflow\     # 示例技能：GitFlow 工作流规范
 │   └── _template\   # 新建技能的模板（下划线开头，不会被安装）
 └── scripts\
-    ├── install.bat      # 安装：为各 IDE 创建指向 skills\ 的目录联接
-    └── uninstall.bat    # 卸载：仅移除指向本仓库的联接，不碰其他内容
+    ├── install.bat      # 安装：为各 IDE 创建指向 skills\ 的目录联接（末尾自动同步规则）
+    ├── uninstall.bat    # 卸载：仅移除指向本仓库的联接，不碰其他内容
+    ├── sync-rules.bat   # 规则同步入口（启动 sync-rules.ps1）
+    └── sync-rules.ps1   # 规则同步实现：保留 .mdc 头部、重建 CLAUDE.md 标记块
 ```
 
 ## 当前技能清单
@@ -85,6 +87,12 @@ scripts\install.bat --only=codebuddy --dir="D:\PortableApps\CodeBuddy\data\skill
 
 :: 卸载（只移除指向本仓库的联接，绝不误删真实目录）
 scripts\uninstall.bat
+
+:: 同步通用规则到各 IDE 规则目录（规则是副本安装，改完 common_rule.md 要跑一次）
+scripts\sync-rules.bat
+
+:: 只检查哪些副本过期，不写文件
+scripts\sync-rules.bat --check
 ```
 
 安装后各 IDE 目录下出现的是目录联接（JUNCTION），特征：
@@ -97,20 +105,33 @@ scripts\uninstall.bat
 
 `docs\common_rule.md` 是仓库中唯一保留的 **always_on 通用规则**（中文回复、代码质量准则、外部信息检索主干、安全与授权边界等跨场景硬约束）。与按需触发的技能不同，它常驻每次会话的上下文，因此保持精简；该文件**随版本库跟踪，克隆即可获得**。
 
-规则**不会**被 `install.bat` 自动安装（脚本只处理技能的目录联接），需手动放入 IDE 的规则目录。推荐安装为**用户级规则**（对本机全部项目生效）：
+规则与技能的安装方式不同：技能是目录联接（改内容即时生效），规则是**文件副本**，改完源文件必须重新同步。`install.bat` 跑完会自动调用 `scripts\sync-rules.bat`；只改了 `docs\common_rule.md` 时单独跑它即可。推荐安装为**用户级规则**（对本机全部项目生效）：
 
-| IDE | 规则目录 | 说明 |
+| IDE | 规则位置 | 同步方式 |
 | --- | -------- | ---- |
-| CodeBuddy | `%USERPROFILE%\.codebuddy\rules\` | 规则文件扩展名为 `.mdc` |
-| Qoder | `%USERPROFILE%\.qoder\rules\` | 保留 frontmatter 的 `trigger: always_on` |
-| Qoder CN | `%USERPROFILE%\.qoder-cn\rules\` | 保留 frontmatter 的 `trigger: always_on` |
-| Claude Code | `%USERPROFILE%\.claude\CLAUDE.md` | 记忆文件（无 rules 目录），将规则内容追加/合并其中，已存在则勿整体覆盖 |
+| Qoder | `%USERPROFILE%\.qoder\rules\common_rule.md` | 自动（整文件覆盖） |
+| Qoder CN | `%USERPROFILE%\.qoder-cn\rules\common_rule.md` | 自动（整文件覆盖，目录缺失时自动创建） |
+| CodeBuddy | `%USERPROFILE%\.codebuddy\rules\<规则名>.mdc` | 自动（保留 IDE frontmatter，只替换正文） |
+| Claude Code | `%USERPROFILE%\.claude\CLAUDE.md` | 自动（整文件重建，首行写入 auto-generated 标记） |
 
-安装步骤：
+```bat
+:: 同步（幂等：内容相同则跳过）
+scripts\sync-rules.bat
 
-1. 复制 `docs\common_rule.md` 到对应 IDE 的规则目录（CodeBuddy 需将扩展名改为 `.mdc`；Claude Code 无 rules 目录，将内容追加/合并进 `CLAUDE.md`）；
-2. 重启 IDE / 开新会话，确认规则已生效；
-3. 规则为**副本安装**（与技能的目录联接不同）：每次修改 `docs\common_rule.md` 后，需重新复制到各 IDE 的规则目录。
+:: 只检查哪些副本过期，不写文件
+scripts\sync-rules.bat --check
+
+:: 只同步某一个 IDE（codebuddy | qoder | qodercn | claude）
+scripts\sync-rules.bat --only=qoder
+
+:: 强制覆盖 CLAUDE.md（其中带非本仓库生成的内容时会拒绝）
+scripts\sync-rules.bat --force
+```
+
+- Qoder / Qoder CN 的 frontmatter（`trigger: always_on`）与源文件完全一致，整文件覆盖最省事；
+- CodeBuddy 的 `.mdc` 会保留 `enabled`/`updatedAt`/`provider` 等 IDE 自管字段，只替换正文；规则文件靠正文里的 `springboot-spec` 识别，不依赖文件名（文件名可能被本地化成中文）；
+- `CLAUDE.md` 整文件由本仓库生成，首行是 `<!-- auto-generated ... -->` 标记。若其中还有别的内容（判断依据：既无标记、也不像规则副本），脚本默认**拒绝覆盖**，需显式 `--force`；
+- 同步后需重启 IDE / 开新会话，规则才会重新注入。
 
 > 只想对单个项目生效时，可改用项目级规则目录（如 `<项目>\.qoder\rules\`、`<项目>\.codebuddy\rules\` 或 `<项目>\CLAUDE.md`）。
 
@@ -121,6 +142,7 @@ scripts\uninstall.bat
 | 改动类型 | 是否需操作 | 说明 |
 | -------- | ---------- | ---- |
 | 修改技能内容（`SKILL.md` 正文、`references/*` 等文件内容） | 否 | 保存即生效，所有 IDE 自动同步 |
+| 修改 `docs\common_rule.md`（always_on 规则） | 是 | 规则是副本安装，运行 `scripts\sync-rules.bat`（`install.bat` 末尾也会自动调用） |
 | 新增 / 删除 / 重命名技能文件夹 | 是 | 联接按文件夹逐个创建，需重跑脚本 |
 
 - **改内容**：无需任何操作。唯一例外——修改了 `SKILL.md` frontmatter 里的 `description`（IDE 启动时缓存的常驻触发信息）时，需重载窗口 / 重启 IDE / 开新会话才会刷新。
@@ -163,7 +185,15 @@ scripts\install.bat
 
 - 若某场景下技能未被触发，往它的 `description` 里补充你实际会用的说法（如“上线”“紧急修复”）；
 - 由于是联接安装，修改保存后即时生效，无需重新运行安装脚本；
-- 注意：skill 是按需触发，不保证 100% 命中；必须始终生效的跨场景硬约束（如回复语言、安全规范）应保留为 IDE 的 always_on rule，不要做成 skill。
+- 注意：skill 是按需触发，不保证 100% 命中。判定发生在**加载之前**——常驻上下文只有 `name + description`，正文此时还读不到，因此在正文或 description 里写“必须使用本技能”改变不了这一步。必须始终生效的跨场景硬约束（如回复语言、安全规范）应直接写成 always_on rule 正文；确实需要保留为 skill 的（编码规范这类正文较长、需渐进加载的），用下面的门禁表兜底。
+
+### 规范类技能的兜底：门禁表
+
+规范类技能（写代码就该遵守的那一类）在本仓库额外有一层兜底：`docs\common_rule.md` 的「规范技能强制加载（门禁）」一节，按**即将产出的文件类型**而非用户措辞，列出「对象 → 必须先加载的技能」映射，并声明该加载不参与任何收益、复杂度、简洁性裁决。
+
+- 判定依据从“请求是否命中场景词”改为“要产出什么文件”，短任务与小改动没有豁免空间；
+- 若某次仍被跳过，先核对门禁表里对应行是否存在、技能名是否写错，再去补 `description` 关键词；
+- 门禁表属于 `common_rule.md`，是**副本安装**，改后需重新复制到各 IDE 规则目录才生效（见上文“通用规则（common_rule.md）的安装与使用”）。
 
 ## 新增一个技能
 
