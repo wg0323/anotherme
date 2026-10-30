@@ -1,7 +1,8 @@
 ---
 name: java-spec
 description: |
-  Java 编码规范。只要编写、修改、重构或审查 Java 代码，就必须使用本技能：
+  写、改、重构或审查任何 Java 代码前，先加载本技能；新建 Java / Spring Boot 工程、
+  生成 Entity / DTO / Service / Controller 等 Java 源文件时同样必须先加载。
   涵盖命名、常量、代码格式、面向对象、集合、并发、控制语句、注释等强制规范。
   同时包含 VSCode 中 Java Maven 项目的首次初始化配置要求。
 ---
@@ -48,6 +49,7 @@ description: |
 1. 生成代码自动遵守全部规范。
 2. 代码违反强制规范时，先指出问题，再输出修正代码。
 3. 代码简洁可读，遵循 DRY；多层 if-else 改用卫语句/策略/工厂等设计模式。
+4. 新建工程或编写 Spring Boot 后端代码时，先加载 `springboot-spec`（工程结构、分层、依赖注入、API 文档），再按本技能约束具体 Java 代码写法；两者同时生效，不互相替代。
 
 ## 详细规范（按场景读取）
 

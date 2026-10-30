@@ -11,6 +11,8 @@ description: |
 
 ## 核心铁律
 
+**前置门禁**：本技能管的是工程结构、分层、依赖注入与接口约定；凡产出或修改 `.java` 源文件，必须同时加载 `java-spec` 并逐条遵守其命名、常量、集合、并发等强制规范。两个技能同时适用，不得以“已加载本技能”为由跳过 `java-spec`。
+
 1. 依赖注入必须使用构造函数注入：依赖字段声明为 `private final`，构造器由 Lombok `@RequiredArgsConstructor` 在类上生成，**禁止手写构造器**（仅当构造器参数需要 `@Lazy`/`@Qualifier`/`@Value` 等注解时才手写）；禁止字段注入（`@Autowired` 打在字段上）与 Setter 注入。判定口径：`pom.xml` 已有 lombok 依赖时一律用 `@RequiredArgsConstructor`，不因存量代码是手写构造器而沿用旧风格；只有项目无 lombok 依赖时才手写构造器。
 2. API 层必须使用 DTO 进行数据传输，严禁直接暴露 Entity；不同场景使用不同的 DTO/VO 对象；对象转换统一放在 `converter` 包的 `XxxConverter` 静态方法中，禁止引入 MapStruct（注解处理器配置成本高于收益），禁止在 Controller/Service 内内联字段拷贝。
 3. Controller 仅负责 HTTP 请求路由、参数绑定、响应封装，严禁包含任何业务逻辑；使用 `@RestController` + `@RequestMapping`。
