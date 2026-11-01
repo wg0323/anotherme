@@ -34,11 +34,11 @@ git pull origin master
 
 # 2. 编码、自测 ...
 
-# 3. 提交（严格遵循 commit-spec.md）
+# 3. 将 message 以 UTF-8 写入 .git/COMMIT_MSG.txt，再提交（中文禁止用 -m 直传）
 git add .
-git commit -m "feat(scope): 新增xxx功能"
+git commit -F .git/COMMIT_MSG.txt
 
-# 4. 推送
+# 4. 推送（提交后删除该临时文件）
 git push origin master
 ```
 
@@ -86,8 +86,12 @@ git checkout master && git pull origin master
 # 2. 修改、自测 ...
 
 # 3. 提交并打 PATCH 版本 Tag（git add . 而非 commit -am，确保新增文件不遗漏）
+#    message 写入 .git/COMMIT_MSG.txt（含 Hotfix 标识），中文禁止用 -m 直传：
+#    fix(scope): 修复线上xxx问题
+#
+#    Hotfix: true
 git add .
-git commit -m "fix(scope): 修复线上xxx问题" -m "Hotfix: true"
+git commit -F .git/COMMIT_MSG.txt
 git tag -a v1.1.1 -m "Hotfix v1.1.1"
 git push origin master && git push origin v1.1.1
 ```

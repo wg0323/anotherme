@@ -69,6 +69,14 @@ Closes #123
   ❌ fix(order): fix 了 Redis 缓存 expire 导致订单 status 异常
   ```
 
+- **禁止**：以编码、乱码、终端兼容、`-m` 传参风险、跨平台等任何技术顾虑为由改用英文书写。编码属于**提交渠道**问题（见下文「编码与防乱码」），与 message 语言无关，只能换渠道（`git commit -F <文件>`），不能换语言。
+
+  ```text
+  ✅ fix(order): 修复订单导出 Excel 中文乱码
+  ❌ fix(order): fix order export excel garbled
+  ❌ fix(order): fix encoding issue in order export
+  ```
+
 - **允许**：业界通用的专有名词、产品名、技术缩写保留英文原文，不强行翻译。
 
 常见保留英文的专有名词（非穷举；判断原则：业界有稳定英文写法的一律保留）：
@@ -92,8 +100,21 @@ Windows 下中文乱码可能来自 message 存储编码，也可能来自 Git �
 
 2. **日志输出编码对齐终端**：终端已使用 UTF-8（如代码页 65001）时，可项目级执行 `git config i18n.logOutputEncoding utf-8`；其他终端按实际代码页设置，不要为了修复显示问题修改存储正确的 message。
 3. **message 一律 UTF-8 无 BOM**：用编辑器编写时确认保存编码为 UTF-8。
-4. **提交渠道防损坏**：优先用编辑器提交；多行或含中文的信息写入 UTF-8 临时文件后 `git commit -F <文件>`，避免在 cmd 中用 `-m` 直接传长中文（cmd 默认 GBK 代码页易损坏传参）。
-5. **提交后自检**：执行 `git log -1` 确认中文显示正常。出现异常时先检查终端代码页和 `i18n.logOutputEncoding`，在 UTF-8 终端中用 `git log -1 --encoding=utf-8` 复核；确认原提交内容损坏后才修正本次 message。
+4. **提交渠道（强制）**：含中文的 message 一律走文件方式，禁止 `git commit -m "<中文>"` 直传——cmd 默认 GBK 代码页会损坏中文，引号与换行还会被 shell 错误解析。标准流程：
+
+   ```bash
+   # 1. 用编辑器/写文件工具将 message 存为 UTF-8 无 BOM 文件（放 .git 目录下天然不被跟踪）
+   #    .git/COMMIT_MSG.txt 内容示例：
+   #    feat(order): 新增订单导出功能
+   #
+   #    - 支持按时间范围导出
+
+   # 2. 用它提交
+   git commit -F .git/COMMIT_MSG.txt
+   ```
+
+   这是解决编码问题的**唯一合规渠道**，不得为了避开它而把 message 改写成英文。
+5. **提交后自检**：执行 `git log -1` 确认中文显示正常。出现异常时先检查终端代码页和 `i18n.logOutputEncoding`，在 UTF-8 终端中用 `git log -1 --encoding=utf-8` 复核；确认原提交内容损坏后才修正本次 message。仅显示乱码、存储正确时只调终端与日志编码，**禁止**用 amend 把 message 改成英文来「消除乱码」。
 
 ## body 规则
 
