@@ -70,3 +70,5 @@ src/main/java/{basePackage}/
 6. 对象转换都在 `converter` 包的 `XxxConverter` 静态方法中，Controller/Service 无内联字段拷贝，`pom.xml` 未引入 MapStruct。
 7. 新建工程已产出 `src/main/resources/logback-spring.xml`（已 include `defaults.xml` 并使用内置 `${CONSOLE_LOG_PATTERN}`/`${FILE_LOG_PATTERN}`，CONSOLE + 滚动 FILE，`SizeAndTimeBasedRollingPolicy`），应用启动后 `logs/` 目录下日志文件已落盘。
 8. 每个 Controller 类有 `@Tag`，每个映射方法有 `@Operation` 与至少一条 `@ApiResponse`，每个路径变量/查询参数/请求头有 `@Parameter`，请求体 DTO 及其字段有 `@Schema`，`pom.xml` 已开启 `-parameters`。
+
+本节只覆盖本栈结构层面的自检，属于生成者自证，不能单独作为可交付结论。改动分级（A/B/C）、架构断言与变异测试、独立审查与交付证据格式遵循 `code-gate` 技能。

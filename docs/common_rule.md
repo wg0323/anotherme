@@ -23,6 +23,7 @@ trigger: always_on
 | commit message、分支、合并、发布、tag | `gitflow` |
 | RabbitMQ 接入、收发消息、声明 Exchange/Queue/Binding | `rabbitmq-reliability` |
 | 运行测试、启动服务验证、等待异步任务完成 | `test-execution` |
+| 完成代码改动、准备提交或交付、判断 AI 生成代码是否可信 | `code-gate` |
 | 新需求落地、模块/架构设计、技术选型 | `solution-design`（外部信息检索见上节） |
 
 - 本节是**既定合规成本**，不参与任何收益、复杂度、简洁性或"是否过度设计"的裁决；不得以"任务很小""内容我已掌握""加载成本高于收益"为由跳过。

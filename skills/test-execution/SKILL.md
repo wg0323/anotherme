@@ -57,3 +57,5 @@ description: |
 | 执行前预估清单、各类型验证的耗时/产物基线、超时上限取值 | `references/expectation-baseline.md` |
 | 止损判定细则、停止后排查流程、挂起原因全表、管道与退出码陷阱 | `references/hang-diagnosis.md` |
 | 收尾清理顺序、Windows 进程/端口查杀命令、归属判定与误杀防范、清理清单 | `references/cleanup.md` |
+
+> 边界：本技能只管测试的范围决策与执行纪律。跑完之后「凭什么判断可以交付」、用哪些生成者之外的信号取证、如何组织独立审查，遵循 `code-gate` 技能。本文件不判定测试本身是否有效——覆盖率与变异得分的判据见 `code-gate` 的 `references/test-effectiveness.md`。
