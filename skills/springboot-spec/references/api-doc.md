@@ -101,21 +101,23 @@ public class OpenApiConfig {
 
 ## 注解规范（OpenAPI3）
 
-### Controller 强制清单（最高优先级）
+### 接口文档强制清单（最高优先级）
 
-生成或修改任何 Controller 代码时逐条满足，缺一即视为不合规，不得交付。
+生成或修改任何 Controller、DTO、VO 代码时逐条满足，缺一即视为不合规，不得交付。
 
 | 编号 | 位置 | 强制要求 | 注解 |
 | ---- | ---- | -------- | ---- |
 | C1 | Controller 类 | 必须有；`name` 写业务模块名，`description` 写职责边界 | `@Tag(name, description)` |
 | C2 | 每个映射方法 | 必须有；`summary` 写“做什么事”（动宾短语），`description` 写前置条件、副作用、权限要求 | `@Operation(summary, description)` |
 | C3 | 路径变量、查询参数、请求头 | 逐参数必须有；`description` 写含义与取值范围，`required` 与业务一致 | `@Parameter(description, required)` |
-| C4 | 请求体 | 不给参数加 `@Parameter`；类与每个字段都用 `@Schema` 描述，语义写在 `@Operation(description)` | `@Schema` |
+| C4 | 请求体 DTO | 不给参数加 `@Parameter`；类与每个字段都用 `@Schema` 描述，语义写在 `@Operation(description)` | `@Schema` |
 | C5 | 返回值 | 每个方法至少一条成功响应；`responseCode` 用该接口实际返回码（对齐 `api-design.md`），schema 交给自动推断 | `@ApiResponse(responseCode, description)` |
 | C6 | 编译参数 | `pom.xml` 必须开启 `-parameters`，否则参数名丢失、文档里出现 `arg0` | `<parameters>true</parameters>` |
+| C7 | 响应 VO | 类与每个字段都用 `@Schema` 描述，`description` 必填；嵌套对象、集合元素同样标注，枚举/状态码/单位写清取值含义 | `@Schema` |
 
-两条最容易写错的细节：
+三条最容易写错的细节：
 
+- **C7 不要只标类、不标字段**：类上的 `@Schema(description)` 只给出模型名，字段没有 `@Schema` 时文档里只剩字段名（`status`、`type`），前端无法判断取值含义；每个字段都要有 `description`，嵌套 VO 与集合元素逐层标注。
 - **C4 的注解同名冲突**：`io.swagger.v3.oas.annotations.parameters.RequestBody` 与 Spring 的 `@RequestBody` 同名，同一文件无法同时 import。需要单独描述请求体时写全限定名，禁止同时 import 两个 `RequestBody`。
 - **C5 不要把 schema 写死**：写 `content = @Content(schema = @Schema(implementation = XxxVO.class))` 会把统一响应体 `Result<XxxVO>` 的 schema 覆盖为 `XxxVO`，与实际返回不符。默认不写 `content`，仅当需要刻意覆盖时才写。
 
@@ -156,8 +158,8 @@ C6 的配置写法（Spring Boot 3.2+ 换用自定义父 pom、或未继承 `spr
 | Controller 类 | `@Tag(name, description)` | `@Api` |
 | 接口方法 | `@Operation(summary, description)` | `@ApiOperation` |
 | 方法参数 | `@Parameter(description, required)`（写在参数上；写在方法级时才需要 `name`） | `@ApiParam` / `@ApiImplicitParam` |
-| 请求体/模型类 | `@Schema(description)` | `@ApiModel` |
-| 模型字段 | `@Schema(description, example)` | `@ApiModelProperty` |
+| 请求体 DTO / 响应 VO 类 | `@Schema(description)` | `@ApiModel` |
+| DTO / VO 字段 | `@Schema(description, example)` | `@ApiModelProperty` |
 | 响应 | `@ApiResponse(responseCode, description)` | `@ApiResponses`（旧包 `io.swagger.annotations`） |
 
 Knife4j 增强注解（包 `com.github.xiaoymin.knife4j.annotations`）：
@@ -168,7 +170,7 @@ Knife4j 增强注解（包 `com.github.xiaoymin.knife4j.annotations`）：
 
 ### Controller 示例
 
-以下示例同时覆盖 C1～C6，Spring Boot 3.x + JDK 17 可直接使用；Spring Boot 2.x + JDK 8 仅需把 `jakarta.validation.*` 换回 `javax.validation.*`。
+以下 Controller、DTO、VO 示例合起来覆盖 C1～C7，Spring Boot 3.x + JDK 17 可直接使用；Spring Boot 2.x + JDK 8 仅需把 `jakarta.validation.*` 换回 `javax.validation.*`。
 
 ```java
 @Tag(name = "用户管理", description = "用户的创建、查询、更新与删除")
@@ -230,6 +232,28 @@ public class UserCreateDTO {
 
 > 字段「是否必填」优先用 Bean Validation（`@NotBlank`/`@NotNull` 等）表达，springdoc 会自动识别；如需在文档上额外标注，用 `@Schema(requiredMode = Schema.RequiredMode.REQUIRED)`（较老版本为已弃用的 `required = true`）。
 
+### VO 示例
+
+```java
+@Schema(description = "用户详情")
+public class UserVO {
+
+    @Schema(description = "用户 ID", example = "1")
+    private Long id;
+
+    @Schema(description = "用户名", example = "zhangsan")
+    private String username;
+
+    @Schema(description = "账号状态：0-禁用，1-正常", example = "1")
+    private Integer status;
+
+    @Schema(description = "创建时间", example = "2026-11-04 10:00:00")
+    private LocalDateTime createTime;
+}
+```
+
+> VO 只包含展示需要的字段，不复用 Entity；字段 `description` 写业务含义，`example` 给真实形态；状态/枚举类字段必须列出取值对照，金额、时长等带单位的字段写明单位。
+
 ### 参数注解归属
 
 不同来源的参数，注解位置不同，不可一刀切：
@@ -240,12 +264,13 @@ public class UserCreateDTO {
 | 查询参数 | `@RequestParam` | `@Parameter(description)` | 非必填必须显式写 `required = false`；springdoc 1.x 中 GET 参数默认按必填展示（官方 FAQ） |
 | 请求头 | `@RequestHeader` | `@Parameter(description, required)` | 鉴权类头写 required=true，透传类头写 false |
 | 请求体 | `@RequestBody` | 不给参数加；描述写在 DTO 的 `@Schema` 与 `@Operation(description)` | 禁止与 Swagger 的 `RequestBody` 同名注解共文件 import |
+| 响应 VO | — | 不给参数加；描述写在 VO 的 `@Schema` | 返回模型不是参数，约束见 C7 |
 | 分页/排序 POJO | `@ParameterObject` | 不给参数加 | 只在 POJO 字段上用 `@Schema`；不支持嵌套对象展开 |
 | 无参方法 | — | 仍需 `@Operation` + `@ApiResponse` | 不能因无参数就省掉方法级注解 |
 
 ### 自检与验收
 
-生成 Controller 后按以下顺序核对，任一项不通过即视为不合规：
+生成 Controller、DTO、VO 后按以下顺序核对，任一项不通过即视为不合规：
 
 ```bat
 :: 1. 列出所有 Controller 文件
@@ -263,7 +288,8 @@ findstr /s /c:"@Operation" src\main\java\*.java | find /c "@Operation"
 1. 每个 tag 的 `description` 非空，每个 operation 的 `summary` 非空。
 2. 每个参数都有 `description`，不出现 `arg0`、`param1` 这类自动生成名（出现即 C6 未生效）。
 3. 每个 operation 的 `responses` 至少包含一条成功码，且没有 schema 解析异常。
-4. 页面无 500：schema 解析报错多见于 swagger-core 版本与 `requiredMode` 不匹配，按“常见坑”排查。
+4. 每个响应 VO 的字段都有 `description`，不出现只有字段名的裸字段；嵌套对象与集合元素同样有描述。
+5. 页面无 500：schema 解析报错多见于 swagger-core 版本与 `requiredMode` 不匹配，按“常见坑”排查。
 
 ## 生产环境安全
 
@@ -289,4 +315,5 @@ knife4j:
 - **Boot 3.4/3.5 + 原版 4.5.0**：springdoc 版本过旧导致 `doc.html` 打不开或接口无法识别；改用 `com.baizhukui` 5.x（drop-in），或保留 4.5.0 但 `<exclusions>` 排除并强制升级到匹配的 springdoc 版本。
 - **标题/版本不生效**：OpenAPI3 下 `knife4j.openapi.*` 无效，必须用 `OpenAPI` Bean 的 `info` 设置。
 - **WebMvc 与 WebFlux starter 混用**：二者不能同时引入，按应用类型（Servlet / 响应式）二选一。
+- **只给 DTO 加 `@Schema`、VO 裸奔**：响应模型在文档里只剩字段名，`status` 的 0/1 含义无处可查。`@ApiResponse(description)` 描述的是接口，不能代替 VO 字段的 `@Schema`，所有 VO 及其嵌套对象、集合元素都要逐个标注。
 - **扫描范围过大**：不配 `springdoc.packages-to-scan` 会全量扫描，拖慢启动且暴露无关端点，务必收窄到 controller 包。
