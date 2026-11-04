@@ -39,7 +39,7 @@ mvn test -Dmaven.test.skip=false -Dtest=ArchitectureTest
 | 铁律 5：自定义业务异常继承 `RuntimeException` | `NO_GENERIC_EXCEPTIONS` | GeneralCodingRules |
 | 铁律 10：Controller 必须 `@Tag` | `CONTROLLER_SHOULD_HAVE_TAG` | ArchUnit |
 | 铁律 10：映射方法必须 `@Operation` | `CONTROLLER_METHOD_SHOULD_HAVE_OPERATION` | ArchUnit |
-| 铁律 2：禁止 MapStruct | —— | maven-enforcer |
+| 铁律 2：禁止 MapStruct 与 commons-beanutils | —— | maven-enforcer |
 
 ## 完整样例
 
@@ -139,8 +139,9 @@ ArchUnit 管结构，管不了"依赖里混进了什么"。这类用 `maven-enfo
                     <bannedDependencies>
                         <excludes>
                             <exclude>org.mapstruct:*</exclude>
+                            <exclude>commons-beanutils:commons-beanutils</exclude>
                         </excludes>
-                        <message>禁止引入 MapStruct：对象转换统一用 converter 包的静态方法</message>
+                        <message>禁止引入 MapStruct 与 commons-beanutils：对象转换用 spring-beans 自带的 BeanUtils，或 converter 包的静态方法</message>
                     </bannedDependencies>
                 </rules>
             </configuration>

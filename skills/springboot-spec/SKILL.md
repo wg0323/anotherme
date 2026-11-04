@@ -14,7 +14,7 @@ description: |
 **前置门禁**：本技能管的是工程结构、分层、依赖注入与接口约定；凡产出或修改 `.java` 源文件，必须同时加载 `java-spec` 并逐条遵守其命名、常量、集合、并发等强制规范。两个技能同时适用，不得以“已加载本技能”为由跳过 `java-spec`。
 
 1. 依赖注入必须使用构造函数注入：依赖字段声明为 `private final`，构造器由 Lombok `@RequiredArgsConstructor` 在类上生成，**禁止手写构造器**（仅当构造器参数需要 `@Lazy`/`@Qualifier`/`@Value` 等注解时才手写）；禁止字段注入（`@Autowired` 打在字段上）与 Setter 注入。判定口径：`pom.xml` 已有 lombok 依赖时一律用 `@RequiredArgsConstructor`，不因存量代码是手写构造器而沿用旧风格；只有项目无 lombok 依赖时才手写构造器。
-2. API 层必须使用 DTO 进行数据传输，严禁直接暴露 Entity；不同场景使用不同的 DTO/VO 对象；对象转换统一放在 `converter` 包的 `XxxConverter` 静态方法中，禁止引入 MapStruct（注解处理器配置成本高于收益），禁止在 Controller/Service 内内联字段拷贝。
+2. API 层必须使用 DTO 进行数据传输，严禁直接暴露 Entity；不同场景使用不同的 DTO/VO 对象。对象转换按「复用次数 + 是否存在非等价映射」分档，不按文件数量分档：**单点调用、且源与目标同名属性类型完全一致时，就地一行完成**（`org.springframework.beans.BeanUtils.copyProperties(source, target)`，Spring 自带、不算新增依赖；目标必须有 setter，`@Builder`/`@Value`/record 的 VO 不适用；禁止 Apache `commons-beanutils`，反射链路慢一个数量级）。**同一转换被 ≥2 处调用、被集合 `stream().map()` 引用，或存在非等价映射（字段名不同、类型不同、枚举码值翻译、脱敏、嵌套对象转换）时，必须抽到 `converter` 包的 `XxxConverter` 静态方法。** 任何位置禁止连续 ≥2 行 `target.setXxx(source.getXxx())` 的逐字段拷贝。禁止引入 MapStruct（注解处理器配置成本高于收益）。分档正反例见 `references/project-structure.md` 的「对象转换分档」。
 3. Controller 仅负责 HTTP 请求路由、参数绑定、响应封装，严禁包含任何业务逻辑；使用 `@RestController` + `@RequestMapping`。
 4. 日志必须使用 SLF4J：类上标注 `@Slf4j` 生成 logger（lombok 依赖同铁律 1；项目无 lombok 时才用 `LoggerFactory.getLogger`），占位符 `{}` 拼接，异常对象作为最后一个参数传入；禁止字符串拼接日志、`System.out`、`e.printStackTrace()`。
 5. 统一使用 `@ControllerAdvice` 全局异常处理；自定义业务异常继承 `RuntimeException`；异常信息不暴露系统内部细节。
@@ -38,10 +38,11 @@ src/main/java/{basePackage}/
 ├── service/impl/{Entity}ServiceImpl.java    # 实现，@Service 只打在这里
 ├── mapper/{Entity}Mapper.java
 ├── entity/{Entity}.java
-├── dto/  vo/  converter/
+├── dto/  vo/  converter/                    # converter 按需创建，见下方说明
 ```
 
 - 每个 `XxxService` 必须在 `service.impl` 有对应 `XxxServiceImpl`；Controller 与跨 Service 调用只注入接口，不注入实现类。
+- `converter/` 按需创建：只有满足铁律 2 的抽类条件（同一转换 ≥2 处调用、被集合映射引用、存在非等价映射）时才建 `XxxConverter`，不为每个 Entity 预建转换类。
 - 新建工程必须在 `pom.xml` 声明 lombok 依赖（`<optional>true</optional>`，版本交由 `spring-boot-dependencies` 管理、不写 version），否则 `@RequiredArgsConstructor` 无法编译。
 - 正例 / 反例对照见 `references/project-structure.md` 的「Service 分层正反例」。
 
@@ -49,7 +50,7 @@ src/main/java/{basePackage}/
 
 | 场景 | 参考文件 |
 | ---- | -------- |
-| 工程根目录布局(src/db/docs/.vscode/pom.xml/target)、包结构、包职责、类命名、Service 分层正反例 | `references/project-structure.md` |
+| 工程根目录布局(src/db/docs/.vscode/pom.xml/target)、包结构、包职责、类命名、对象转换分档与正反例、Service 分层正反例 | `references/project-structure.md` |
 | RESTful URL、HTTP 方法、状态码 | `references/api-design.md` |
 | API 文档（Knife4j/OpenAPI3）选型、接入、Controller 与 DTO/VO 注解、生产安全 | `references/api-doc.md` |
 | 单元测试原则（AIR/BCDE）、命名、粒度与位置、覆盖要求、数据与外部依赖策略、代码可测性、构建默认跳过测试配置 | `references/testing.md` |
@@ -67,7 +68,7 @@ src/main/java/{basePackage}/
 3. 所有依赖字段为 `private final`，类上有 `@RequiredArgsConstructor`、无手写构造器（参数注解场景除外），无字段注入、无 Setter 注入。
 4. Controller 无业务逻辑，入参为 DTO、出参为 VO 或统一响应体。
 5. 日志使用 `@Slf4j` 与 `{}` 占位符，无 `System.out`、`e.printStackTrace()`、字符串拼接日志。
-6. 对象转换都在 `converter` 包的 `XxxConverter` 静态方法中，Controller/Service 无内联字段拷贝，`pom.xml` 未引入 MapStruct。
+6. 不存在连续 ≥2 行 `target.setXxx(source.getXxx())` 的逐字段拷贝；满足抽类条件的转换（同一转换 ≥2 处调用、被集合映射引用、存在非等价映射）都在 `converter` 包的 `XxxConverter` 静态方法中，其余转换就地一行完成；`pom.xml` 未引入 MapStruct 与 Apache `commons-beanutils`。
 7. 新建工程已产出 `src/main/resources/logback-spring.xml`（已 include `defaults.xml` 并使用内置 `${CONSOLE_LOG_PATTERN}`/`${FILE_LOG_PATTERN}`，CONSOLE + 滚动 FILE，`SizeAndTimeBasedRollingPolicy`），应用启动后 `logs/` 目录下日志文件已落盘。
 8. 每个 Controller 类有 `@Tag`，每个映射方法有 `@Operation` 与至少一条 `@ApiResponse`，每个路径变量/查询参数/请求头有 `@Parameter`，请求体 DTO 与响应 VO 的类及其字段都有 `@Schema`，`pom.xml` 已开启 `-parameters`。
 

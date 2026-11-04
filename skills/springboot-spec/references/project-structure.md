@@ -31,12 +31,81 @@ project-root/
 | `entity`       | 数据库实体映射                    | `User`                                      |
 | `dto`          | 接收请求参数                      | `UserCreateDTO`, `UserUpdateDTO`            |
 | `vo`           | 响应数据封装                      | `UserVO`, `UserDetailVO`                    |
-| `converter`    | DTO/Entity/VO 对象转换            | `UserConverter`                             |
+| `converter`    | 对象转换（按需创建）              | `UserConverter`                             |
 | `config`       | 配置类                            | `WebConfig`, `SwaggerConfig`                |
 | `constant`     | 常量定义                          | `UserConstant`                              |
 | `enums`        | 枚举类                            | `UserStatusEnum`                            |
 | `exception`    | 异常类                            | `BusinessException`                         |
 | `utils`        | 工具类                            | `StringUtils`、`DateUtils`、`SecurityUtils` |
+
+## 对象转换分档（强制）
+
+转换落点由「复用次数」和「是否存在非等价映射」决定，与 VO 的数量无关。判定顺序固定：先判 A 档，不成立再看 B 档。
+
+| 档 | 判定条件（全部满足才成立） | 落点 |
+| --- | --- | --- |
+| A 就地一行 | 只在一处调用；源与目标同名属性类型完全一致；无脱敏、无码值翻译、无嵌套转换 | 调用处 `BeanUtils.copyProperties(source, target)` |
+| B 抽 Converter | 任一成立：同一转换 ≥2 处调用；被 `list.stream().map()` 引用；存在非等价映射 | `converter` 包的 `XxxConverter` 静态方法 |
+
+### A 档正例
+
+```java
+// service/impl/UserServiceImpl.java
+UserVO vo = new UserVO();
+BeanUtils.copyProperties(user, vo);   // org.springframework.beans.BeanUtils，Spring 自带
+return vo;
+```
+
+目标对象必须有 setter（Lombok `@Data` / `@Setter`）。`@Builder`、`@Value`、record 没有 setter，`copyProperties` 不报错但目标全空，这类 VO 直接走 B 档。
+
+### B 档正例
+
+```java
+// converter/UserConverter.java
+public final class UserConverter {
+
+    private UserConverter() {
+    }
+
+    public static UserVO toVO(User user) {
+        if (user == null) {
+            return null;
+        }
+        UserVO vo = new UserVO();
+        BeanUtils.copyProperties(user, vo);      // 同名同类型字段先整体拷贝
+        vo.setNickname(user.getUserName());      // 字段名不同，显式映射
+        // 枚举 -> 展示文本
+        vo.setStatusDesc(user.getStatus() == null ? null : user.getStatus().getDesc());
+        return vo;
+    }
+
+    public static List<UserVO> toVOList(List<User> users) {
+        return users.stream().map(UserConverter::toVO).collect(Collectors.toList());
+    }
+}
+```
+
+### 反例（禁止）
+
+```java
+// 违规一：连续逐字段 set。改一个字段要跟着改八行，字段改名时靠肉眼比对
+UserVO vo = new UserVO();
+vo.setId(user.getId());
+vo.setName(user.getName());
+vo.setEmail(user.getEmail());
+
+// 违规二：集合用 for 循环逐条 new + set
+List<UserVO> voList = new ArrayList<>();
+for (User user : users) {
+    UserVO vo = new UserVO();
+    BeanUtils.copyProperties(user, vo);
+    voList.add(vo);
+}
+```
+
+### 静默区
+
+字段名相同但类型不同（`Date` ↔ `LocalDateTime`、枚举 ↔ 整型、`Long` ↔ `String`）是 `copyProperties` 的静默区：不抛异常、不打日志，目标字段留空。存在这类字段时，不论调用几处，都必须显式 `set` 覆盖，并逐字段核对 VO 有值。
 
 ## Service 分层正反例（强制）
 
@@ -126,7 +195,7 @@ private final UserServiceImpl userService;
 | Entity       | `{实体名}`            | `User`                                       |
 | DTO          | `{实体名}{操作}DTO`   | `UserCreateDTO`, `UserQueryDTO`              |
 | VO           | `{实体名}{场景}VO`    | `UserVO`, `UserDetailVO`                     |
-| Converter    | `{实体名}Converter`   | `UserConverter`                              |
+| Converter    | `{实体名}Converter`   | `UserConverter`（满足抽类条件才建）          |
 | Config       | `{功能}Config`        | `WebConfig`, `RedisConfig`                   |
 | Constant     | `{模块}Constant`      | `UserConstant`；位于 `constant` 包下的常量类可省略 Constant 后缀，如 `OrderStatus` |
 | Enum         | `{功能}Enum`          | `UserStatusEnum`, `OrderStatusEnum`          |
