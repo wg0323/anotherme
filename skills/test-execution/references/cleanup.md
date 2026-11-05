@@ -9,8 +9,8 @@
 ## 清理顺序
 
 1. **采集证据**：测试统计、关键日志、退出码、状态变化——先下结论，再删现场。
-2. **停止应用服务**：按 PID 终止进程树，不按映像名；中间件不停。
-3. **确认释放**：应用服务端口重新查一次，无监听才算停干净。
+2. **停止应用服务**：按 PID 终止进程树，不按映像名；既有或共享中间件不停，本次专用临时实例按归属清理。
+3. **确认释放**：应用服务及本次临时实例的端口重新查一次，无监听才算停干净。
 4. **清理文件**：临时脚本、临时日志、临时文件与目录。
 5. **答复中交代**：停了什么、删了什么、保留了什么及原因。
 
@@ -18,7 +18,7 @@
 
 ```bat
 :: 端口反查 PID
-netstat -ano | findstr :8080
+powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue | Select-Object LocalAddress,LocalPort,OwningProcess"
 
 :: 核对进程身份（确认命令行确为本次启动）
 powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter 'ProcessId=1234' | Select-Object ProcessId,Name,CommandLine | Format-List"
@@ -42,7 +42,7 @@ tasklist /FI "PID eq 1234"
 | 对象 | 处理 |
 | ---- | ---- |
 | 本次启动的应用服务/脚本进程及其子进程 | 终止并确认端口释放 |
-| 本次启动的数据库、消息队列、缓存等中间件 | 不停，在答复中写明端口与运行状态 |
+| 数据库、消息队列、缓存等中间件 | 既有或共享实例不停；本次启动的专用临时实例按 PID / 容器归属停止并确认资源释放，答复中写明状态 |
 | 本次编写的临时脚本（`.bat`/`.ps1`/`.sh`/`.py`/`.sql`） | 删除；已沉淀为项目正式脚本的保留并说明 |
 | 本次产生的日志与后台重定向输出文件 | 证据采集完毕后删除 |
 | 本次生成的临时目录、下载/导出的临时文件 | 删除 |

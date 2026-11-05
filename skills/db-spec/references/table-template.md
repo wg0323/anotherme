@@ -5,8 +5,8 @@
 ```sql
 -- 表名：业务名称_表的作用，单数形式，不用保留字
 CREATE TABLE `trade_order` (
-  -- 表必备三字段之一：主键
-  `id`           bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
+  -- 表必备三字段之一：主键（雪花 ID，应用层生成，禁止 AUTO_INCREMENT）
+  `id`           bigint unsigned NOT NULL COMMENT '主键',
   -- 业务唯一字段 -> 建唯一索引
   `order_no`     varchar(32)     NOT NULL COMMENT '订单号',
   `user_id`      bigint unsigned NOT NULL COMMENT '下单用户ID',

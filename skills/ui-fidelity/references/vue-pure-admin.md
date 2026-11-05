@@ -110,7 +110,6 @@ const {
         :data="dataList"
         :columns="dynamicColumns"
         :pagination="{ ...pagination, size }"
-        :header-cell-style="{ background: 'var(--el-fill-color-light)', color: 'var(--el-text-color-primary)' }"
         @page-size-change="handleSizeChange"
         @page-current-change="handleCurrentChange"
       />
@@ -220,4 +219,4 @@ const {
 
 ## 8. 工程校验
 
-原模板自带 `pnpm lint`（eslint + prettier + stylelint），其中 stylelint 使用 `stylelint-config-recess-order` 强制属性排序、`prettier/prettier` 强制格式。二开项目仍配置该命令时，交付前必须运行并通过；已移除或未配置时标记不适用，不要为了检查重新引入工具。
+原模板自带 `pnpm lint`（eslint + prettier + stylelint），其中 stylelint 使用 `stylelint-config-recess-order` 强制属性排序、`prettier/prettier` 强制格式。二开项目仍配置该命令时，交付前必须运行，本次新增错误清零，无关存量错误记录并报告；已移除或未配置时标记不适用，不要为了检查重新引入工具。

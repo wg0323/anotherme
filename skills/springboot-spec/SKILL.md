@@ -26,6 +26,7 @@ description: |
 11. 构建默认跳过测试（目的仅是打包提速，不降低测试要求）：新建工程在 `pom.xml` 的 `<properties>` 中配置 `<maven.test.skip>true</maven.test.skip>`，使 `mvn compile`/`package`/`install` 全程自动跳过测试的编译与执行，无需每次手动加 `-DskipTests`；运行测试不改 pom，命令行覆盖即可：`mvn test -Dmaven.test.skip=false`。交付含核心业务逻辑的代码前，必须用该命令显式运行并通过对应测试，禁止只写不跑（执行纪律遵循 test-execution 技能）；详见 `references/testing.md`。
 12. 新建工程必须交付自述文件：工程根目录固定输出 `README.md`（全大写 + `.md`），章节骨架、按项目类型裁剪与填写红线统一遵循 `doc-writing` 技能的 `references/readme-template.md`（唯一真相源，未安装该技能时按其骨架生成）。本栈差异项：环境要求写 JDK/Maven/MySQL/Redis 实际版本；快速开始按「导入 SQL → 改 `application-dev.yml` → 激活 dev Profile 启动」给出当前终端可直接复制执行的命令；配置说明列 `spring.datasource.*` 及 Boot 3.x 的 `spring.data.redis.*`、Boot 2.x 的 `spring.redis.*` 等实际关键项；API 文档写实际访问地址 `http://localhost:{server.port}/doc.html` 并说明生产环境用 `knife4j.production=true` 关闭；部署指南写 `mvn package` + `java -jar` 与日志路径；纯后端工程省略前端/小程序启动小节。
 13. 工程编码统一 UTF-8（根治 Windows 控制台乱码）：新建工程必须在五处同时对齐 UTF-8——① 源文件（VSCode `files.encoding=utf8`）；② 构建（`pom.xml` 的 `project.build.sourceEncoding`）；③ HTTP（`application.yml` 的 `server.servlet.encoding`）；④ JVM 输出（`.vscode/launch.json` 的 `vmArgs` + `console: integratedTerminal`）；⑤ 终端代码页（终端 profile 启动即 `chcp 65001`），缺一处都可能残留乱码。控制台乱码根因是「JVM 输出编码（写入端）与终端代码页（解读端）不匹配」，`application.yml` 只管 HTTP、`pom.xml` 只管构建，均无法根治控制台乱码；Debug Console（`internalConsole`）中文乱码为已知无解限制，必须走集成终端。五处具体配置、按 JDK 版本（8~17 与 18+）的 `vmArgs` 差异、验证清单与常见坑详见 `references/encoding.md`。
+14. 主键与雪花 ID 序列化：Entity 主键统一 `Long id`，`application.yml` 显式配置 `mybatis-plus.global-config.db-config.id-type: ASSIGN_ID`，禁止 `@TableId(type = IdType.AUTO)`；实际返回前端的 VO / DTO 中，雪花主键及关联 ID 字段必须用 `@JsonSerialize(using = ToStringSerializer.class)` 序列化为字符串，避免 JS Number 精度丢失，不能只标注不直接暴露的 Entity。建表、多实例分配与原生 MyBatis 的主键规则遵循 `db-spec` 技能「主键策略规约」。
 
 ## 新建工程骨架（强制产出清单）
 
@@ -72,4 +73,4 @@ src/main/java/{basePackage}/
 7. 新建工程已产出 `src/main/resources/logback-spring.xml`（已 include `defaults.xml` 并使用内置 `${CONSOLE_LOG_PATTERN}`/`${FILE_LOG_PATTERN}`，CONSOLE + 滚动 FILE，`SizeAndTimeBasedRollingPolicy`），应用启动后 `logs/` 目录下日志文件已落盘。
 8. 每个 Controller 类有 `@Tag`，每个映射方法有 `@Operation` 与至少一条 `@ApiResponse`，每个路径变量/查询参数/请求头有 `@Parameter`，请求体 DTO 与响应 VO 的类及其字段都有 `@Schema`，`pom.xml` 已开启 `-parameters`。
 
-本节只覆盖本栈结构层面的自检，属于生成者自证，不能单独作为可交付结论。改动分级（A/B/C）、架构断言与变异测试、独立审查与交付证据格式遵循 `code-gate` 技能。
+本节只覆盖本栈结构层面的自检，属于生成者自证，不能单独作为可交付结论。进入交付阶段后再加载 `code-gate`，按实际改动分级选择架构断言、变异测试、独立审查与证据格式；无需在编码开始前预载。

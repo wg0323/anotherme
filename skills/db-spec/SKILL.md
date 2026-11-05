@@ -23,6 +23,13 @@ description: |
 10. **字段注释**：修改字段含义或对字段表示的状态追加时，必须及时更新字段注释。
 11. **逻辑删除**：需要逻辑删除的表使用 `is_deleted`（`unsigned tinyint`，0-未删除/1-已删除）标记，禁止对核心业务数据做物理删除。
 
+## 主键策略规约
+
+1. **默认雪花 ID**：新建表主键使用 `bigint unsigned NOT NULL`，由应用层生成雪花 ID（64 位，十进制最多 19 位），禁止 `AUTO_INCREMENT`；主键及引用主键的关联字段禁用 `int`。既有项目已统一采用其他主键策略时沿用现状，不做全库改造。
+2. **MyBatis-Plus**：`application.yml` 显式配置 `mybatis-plus.global-config.db-config.id-type: ASSIGN_ID`（3.3.0+ 默认即 ASSIGN_ID，显式声明防回退）；实体主键声明为 `Long id`，禁止 `@TableId(type = IdType.AUTO)`；insert 前无需手动赋值，框架自动回填。
+3. **原生 MyBatis**：insert 禁止 `useGeneratedKeys="true" keyProperty="id"`，主键由应用层生成后作为普通字段写入。项目已引入 MyBatis-Plus 时，优先注入同一个 `IdentifierGenerator` 生成 ID；使用静态 `IdWorker.getId()` 时，必须在应用启动且首次生成 ID 前，通过 `IdWorker.setIdentifierGenerator(...)` 或 `initSequence(...)` 显式统一配置，禁止自定义 Bean 与静态工具分别使用不同生成器。
+4. **多实例部署**：每个运行实例的 `workerId` / `datacenterId` 组合必须唯一，通过实例级环境变量或编排配置注入自定义 `IdentifierGenerator` Bean（`new DefaultIdentifierGenerator(workerId, datacenterId)`），禁止所有实例共用同一组固定值或依赖默认推导。默认雪花算法下两个取值均为 0～31；部署方案还必须明确时钟回拨处理策略。
+
 ## 索引规约
 
 1. **业务唯一性**：业务上具有唯一特性的字段，即使是组合字段，也必须建成唯一索引。
