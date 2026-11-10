@@ -20,7 +20,7 @@ description: |
 5. 统一使用 `@ControllerAdvice` 全局异常处理；自定义业务异常继承 `RuntimeException`；异常信息不暴露系统内部细节。
 6. 安全开发基线：所有外部输入必须校验；隶属用户的资源必须做归属权校验，严禁仅凭登录态操作他人数据；敏感数据（密码、身份证等）禁止明文存储、禁止输出到日志，前端展示与日志打印必须脱敏；SQL 必须参数绑定（MyBatis 用 `#{}`，禁止 `${}`），禁止字符串拼接；涉及登录态、角色权限或资源归属的接口必须用 Spring Security 做认证授权，禁止手写 Token 校验与自定义拦截器鉴权，纯 CRUD/内部工具不强制引入；短信/支付等平台资源接口必须限流、冷却与人机校验；详见 `references/security.md`。
 7. 包名小写、点分隔符间有且仅有一个自然语义英语单词、单数形式。
-8. Service 分层强制：所有业务 Service 一律「接口 + 实现」两个文件，接口在 `service` 包、实现在 `service.impl` 包；**禁止只产出无接口的 `@Service public class XxxService`**。Entity 对应 Service 的接口继承 `IService<T>`、实现继承 `ServiceImpl<Mapper, T>`，通过 baseMapper 访问 Mapper；非 entity 对应的业务编排 Service（如 CommandService）为纯接口，不继承 IService，通过构造器注入依赖。本约定是团队分层规范，不适用「避免过度封装 / 只写最少代码」的简化判断。
+8. Service 分层强制（缺一即不合规）：所有业务 Service 一律「接口 + 实现」两个文件，接口在 `service` 包、实现在 `service.impl` 包；**禁止只产出无接口的 `@Service public class XxxService`**。按是否绑定 Entity 分两档，判据为本 Service 名下是否存在同实体名的 `entity` 与 `mapper`：① entity 绑定型（`pom.xml` 含 `mybatis-plus-boot-starter`）—— 接口 `extends IService<{Entity}>`，实现 `extends ServiceImpl<{Entity}Mapper, {Entity}> implements {Entity}Service`（泛型顺序 Mapper 在前，不可颠倒），增删改查直接用父类 `save`/`getById`/`list`/`baseMapper`，不再额外注入 `{Entity}Mapper` 字段；② 业务编排型（无绑定 Entity，如 `OrderCommandService`）—— 纯接口，实现 `implements` 接口并经构造器注入依赖，不得为凑格式继承 `IService`/`ServiceImpl`。禁止两种降级：把 entity 绑定型写成「纯接口 + 注入 Mapper」，或只 `extends ServiceImpl` 而不 `implements` 自定义接口。纯 MyBatis 项目（无 MyBatis-Plus 依赖）无 `IService` 可用时，entity 绑定型退化为「纯接口 + 实现注入 Mapper」。本约定是团队分层规范，不适用「避免过度封装 / 只写最少代码」的简化判断，也不因存量项目风格而降级。
 9. 日志输出基线：默认「控制台 + 滚动日志文件（按时间 + 大小切分）」；仅当明确要求关注/分离错误日志时，追加独立 ERROR 日志文件。统一使用 `src/main/resources/logback-spring.xml`，必须 `include org/springframework/boot/logging/logback/defaults.xml` 并使用内置 `${CONSOLE_LOG_PATTERN}`/`${FILE_LOG_PATTERN}`（禁止自定义 pattern 变量），滚动策略用 `SizeAndTimeBasedRollingPolicy`（JDK 8/Spring Boot 2.x 与 JDK 17+/3.x 通用；禁用已弃用的 `SizeAndTimeBasedFNATP`）；详见 `references/logging.md`。
 10. API 文档与 Controller 注解基线（强制）：对外接口必须提供在线文档，统一使用 Knife4j（基于 springdoc-openapi / OpenAPI3）。**所有 Controller 类必须有 `@Tag`，每个映射方法必须有 `@Operation`，每个路径变量/查询参数/请求头必须有 `@Parameter`，每个方法至少一条 `@ApiResponse` 描述成功返回**；请求体与响应体都不给参数加 `@Parameter`，请求 DTO 与响应 VO 的类及其每个字段必须用 `@Schema` 描述（`description` 必填，嵌套对象与集合元素同样要标）；`pom.xml` 必须开启 `-parameters`，否则参数名丢失。缺任一项视为不合规，不得交付。Swagger 注解包在 Boot 2.x 与 3.x 完全一致（`io.swagger.v3.oas.annotations.*`），换版本只换依赖坐标与 `javax`/`jakarta` 校验包，不换注解；禁止已停更的 springfox（Boot 2.6+ 启动崩溃、Boot 3.x 不兼容）。Boot 3.x 依赖必须带 `jakarta` 后缀；原版 `com.github.xiaoymin` 4.5.0 适配 Boot 2.6~3.3，Boot 3.4/3.5+ 换社区 fork `com.baizhukui` 5.x（drop-in，仅改 groupId）。生产环境必须用 `knife4j.production=true` 或鉴权关闭文档裸奔；强制清单 C1~C7、逐参数写法与自检命令详见 `references/api-doc.md`。
 11. 构建默认跳过测试（目的仅是打包提速，不降低测试要求）：新建工程在 `pom.xml` 的 `<properties>` 中配置 `<maven.test.skip>true</maven.test.skip>`，使 `mvn compile`/`package`/`install` 全程自动跳过测试的编译与执行，无需每次手动加 `-DskipTests`；运行测试不改 pom，命令行覆盖即可：`mvn test -Dmaven.test.skip=false`。交付含核心业务逻辑的代码前，必须用该命令显式运行并通过对应测试，禁止只写不跑（执行纪律遵循 test-execution 技能）；详见 `references/testing.md`。
@@ -35,8 +35,8 @@ description: |
 ```text
 src/main/java/{basePackage}/
 ├── controller/{Entity}Controller.java
-├── service/{Entity}Service.java             # 接口，本包只放接口
-├── service/impl/{Entity}ServiceImpl.java    # 实现，@Service 只打在这里
+├── service/{Entity}Service.java             # 接口：extends IService<{Entity}>
+├── service/impl/{Entity}ServiceImpl.java    # 实现：extends ServiceImpl<{Entity}Mapper, {Entity}>，@Service 只打在这里
 ├── mapper/{Entity}Mapper.java
 ├── entity/{Entity}.java
 ├── dto/  vo/  converter/                    # converter 按需创建，见下方说明
@@ -45,6 +45,7 @@ src/main/java/{basePackage}/
 - 每个 `XxxService` 必须在 `service.impl` 有对应 `XxxServiceImpl`；Controller 与跨 Service 调用只注入接口，不注入实现类。
 - `converter/` 按需创建：只有满足铁律 2 的抽类条件（同一转换 ≥2 处调用、被集合映射引用、存在非等价映射）时才建 `XxxConverter`，不为每个 Entity 预建转换类。
 - 新建工程必须在 `pom.xml` 声明 lombok 依赖（`<optional>true</optional>`，版本交由 `spring-boot-dependencies` 管理、不写 version），否则 `@RequiredArgsConstructor` 无法编译。
+- 新建工程使用 MyBatis-Plus 时必须在 `pom.xml` 声明 `mybatis-plus-boot-starter`（不写死 version），否则 entity 绑定型 Service 无法 `extends IService`/`ServiceImpl`；纯 MyBatis 工程不声明。
 - 正例 / 反例对照见 `references/project-structure.md` 的「Service 分层正反例」。
 
 ## 详细规范（按场景读取）
@@ -64,7 +65,7 @@ src/main/java/{basePackage}/
 
 生成工程代码后、交付前逐条确认，任一条不满足先修正再交付：
 
-1. `service` 包内每个类型都是接口，`service.impl` 有对应 `XxxServiceImpl` 且 `implements` 该接口；`@Service` 只出现在实现类上。
+1. `service` 包内每个类型都是接口，`service.impl` 有对应 `XxxServiceImpl` 且 `implements` 该接口；`@Service` 只出现在实现类上；entity 绑定型的接口已 `extends IService<T>`、实现已 `extends ServiceImpl<Mapper, T>`（泛型顺序 Mapper 在前），实现类内无多余的 `XxxMapper` 注入字段；业务编排型接口未误继承 `IService`。
 2. Controller 及其他层只注入 Service 接口，代码中不出现 `XxxServiceImpl` 作为注入类型。
 3. 所有依赖字段为 `private final`，类上有 `@RequiredArgsConstructor`、无手写构造器（参数注解场景除外），无字段注入、无 Setter 注入。
 4. Controller 无业务逻辑，入参为 DTO、出参为 VO 或统一响应体。

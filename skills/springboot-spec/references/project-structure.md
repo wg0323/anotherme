@@ -113,6 +113,8 @@ for (User user : users) {
 
 ### entity 绑定型（MyBatis-Plus 官方风格）
 
+下面两个 `extends` 都是强制项：只做到分包 + `implements` 接口不算合规。
+
 ```java
 // service/UserService.java
 public interface UserService extends IService<User> {
@@ -136,6 +138,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 ```
 
 ### 业务编排型（不绑定 entity）
+
+此档反向禁止继承 `IService`/`ServiceImpl`，否则会凭空多出 `save`/`getById` 等与 Entity 无关的方法。
 
 ```java
 // service/OrderCommandService.java
@@ -172,9 +176,23 @@ public class UserServiceImpl { }
 
 // 违规三：上层注入实现类而非接口
 private final UserServiceImpl userService;
+
+// 违规四：entity 绑定型降级为「纯接口 + 注入 Mapper」，丢失 MP 通用 CRUD 能力
+public interface UserService { }
+
+@Service
+@RequiredArgsConstructor
+public class UserServiceImpl implements UserService {
+
+    private final UserMapper userMapper;   // 应为 extends ServiceImpl<UserMapper, User>
+}
+
+// 违规五：只继承 ServiceImpl 而不实现自定义接口，接口层被架空
+@Service
+public class UserServiceImpl extends ServiceImpl<UserMapper, User> { }
 ```
 
-判断口径：`service` 包内每个类型都必须是接口；`service.impl` 包内的类必须 `implements` 对应接口；跨层引用一律面向接口。
+判断口径：`service` 包内每个类型都必须是接口；`service.impl` 包内的类必须 `implements` 对应接口；跨层引用一律面向接口。绑定 Entity 的 Service 还必须同时满足「接口 `extends IService<{Entity}>` + 实现 `extends ServiceImpl<{Entity}Mapper, {Entity}>`」，缺一即不合规；无绑定 Entity 的业务编排型 Service 反向禁止继承 `IService`/`ServiceImpl`。
 
 ## 类命名规范
 
