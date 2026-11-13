@@ -8,6 +8,9 @@
     .claude     CLAUDE.md  regenerate the whole file with an
                         auto-generated marker on the first line
 
+  Cursor has no user-level rule file -- its User Rules live inside the
+  app (Settings > Rules) -- so it only gets a reminder, never a write.
+
   Invoked by scripts\sync-rules.bat; the CLI options mirror the other
   .bat scripts so usage stays identical.
 
@@ -33,11 +36,12 @@ foreach ($a in @($CliArgs)) {
     elseif ($a -like '--only=*') { $only = $a.Substring(7) }
     elseif ($a -eq '--help' -or $a -eq '-h' -or $a -eq '/?') {
         Write-Host 'anotherme rule sync'
-        Write-Host 'Usage: sync-rules.bat [--only=codebuddy|qoder|qodercn|claude] [--check] [--force]'
+        Write-Host 'Usage: sync-rules.bat [--only=codebuddy|qoder|qodercn|claude|cursor] [--check] [--force]'
         Write-Host ''
         Write-Host '  --only=IDE  target a single IDE'
         Write-Host '  --check     report drift only, write nothing'
         Write-Host '  --force     overwrite CLAUDE.md even if it holds foreign content'
+        Write-Host '              (cursor prints a manual-paste reminder, it has no rule file)'
         exit 0
     }
     else { Write-Host "[WARN] unknown argument: $a" }
@@ -225,6 +229,11 @@ Sync-Copy 'qoder' (Join-Path $env:USERPROFILE '.qoder\rules\common_rule.md')
 Sync-Copy 'qodercn' (Join-Path $env:USERPROFILE '.qoder-cn\rules\common_rule.md')
 Sync-Mdc
 Sync-Claude
+
+# ---- cursor: reminder only ---------------------------------------------
+if (In-Scope 'cursor') {
+    Write-Host '[cursor] no user-level rule file: paste the docs\common_rule.md body into Cursor Settings > Rules'
+}
 
 Write-Host ''
 Write-Host '================== Rule sync =================='

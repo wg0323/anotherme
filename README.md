@@ -48,6 +48,7 @@
 | Qoder    | `%USERPROFILE%\.qoder\skills`      | 目录存在时自动安装                 |
 | Qoder CN | `%USERPROFILE%\.qoder-cn\skills`  | 目录存在时自动安装                 |
 | Claude Code | `%USERPROFILE%\.claude\skills` | 目录存在时自动安装；官方支持符号链接加载，JUNCTION 同效 |
+| Cursor   | `%USERPROFILE%\.cursor\skills`    | 目录存在时自动安装；官方另兼容读取 `~/.claude/skills` |
 | Codex（示例） | `%USERPROFILE%\.codex\skills` | 未来接入：在两个脚本的目标映射区各加一行即可 |
 
 接入新的 IDE：只需在 `scripts\install.bat` 与 `uninstall.bat` 的目标映射区新增一行目录即可。
@@ -77,7 +78,7 @@ scripts\uninstall.bat --only=qodercn --dir="E:\qoder-cn-data\skills"
 :: 安装全部技能到所有已探测到的 IDE
 scripts\install.bat
 
-:: 只安装到指定 IDE（codebuddy | qoder | qodercn | claude）
+:: 只安装到指定 IDE（codebuddy | qoder | qodercn | claude | cursor）
 scripts\install.bat --only=qoder
 
 :: 目标已存在同名联接（指向其他位置）时强制重建
@@ -114,6 +115,7 @@ scripts\sync-rules.bat --check
 | Qoder CN | `%USERPROFILE%\.qoder-cn\rules\common_rule.md` | 自动（整文件覆盖，目录缺失时自动创建） |
 | CodeBuddy | `%USERPROFILE%\.codebuddy\rules\<规则名>.mdc` | 自动（保留 IDE frontmatter，只替换正文） |
 | Claude Code | `%USERPROFILE%\.claude\CLAUDE.md` | 自动（整文件重建，首行写入 auto-generated 标记） |
+| Cursor | Cursor 设置 → Customize → Rules（应用内存储） | 手动粘贴（官方无用户级规则文件，脚本只打印提醒） |
 
 ```bat
 :: 同步（幂等：内容相同则跳过）
@@ -122,7 +124,7 @@ scripts\sync-rules.bat
 :: 只检查哪些副本过期，不写文件
 scripts\sync-rules.bat --check
 
-:: 只同步某一个 IDE（codebuddy | qoder | qodercn | claude）
+:: 只同步某一个 IDE（codebuddy | qoder | qodercn | claude | cursor）
 scripts\sync-rules.bat --only=qoder
 
 :: 强制覆盖 CLAUDE.md（其中带非本仓库生成的内容时会拒绝）
@@ -132,9 +134,10 @@ scripts\sync-rules.bat --force
 - Qoder / Qoder CN 的 frontmatter（`trigger: always_on`）与源文件完全一致，整文件覆盖最省事；
 - CodeBuddy 的 `.mdc` 会保留 `enabled`/`updatedAt`/`provider` 等 IDE 自管字段，只替换正文；规则文件靠正文里的 `springboot-spec` 识别，不依赖文件名（文件名可能被本地化成中文）；
 - `CLAUDE.md` 整文件由本仓库生成，首行是 `<!-- auto-generated ... -->` 标记。若其中还有别的内容（判断依据：既无标记、也不像规则副本），脚本默认**拒绝覆盖**，需显式 `--force`；
+- Cursor 的用户规则只存在于应用内（官方明确不落盘），脚本不会写任何文件，只在输出里打印提醒：改完 `docs\common_rule.md` 后需把正文重新粘贴到 Customize → Rules。想对单个项目生效，可改用 `<项目>\.cursor\rules\common_rule.mdc`（frontmatter 写 `alwaysApply: true`）或项目根 `AGENTS.md`；
 - 同步后需重启 IDE / 开新会话，规则才会重新注入。
 
-> 只想对单个项目生效时，可改用项目级规则目录（如 `<项目>\.qoder\rules\`、`<项目>\.codebuddy\rules\` 或 `<项目>\CLAUDE.md`）。
+> 只想对单个项目生效时，可改用项目级规则目录（如 `<项目>\.qoder\rules\`、`<项目>\.codebuddy\rules\`、`<项目>\.cursor\rules\` 或 `<项目>\CLAUDE.md`）。
 
 ## 修改技能后的同步
 

@@ -12,7 +12,7 @@ rem
 rem  Usage:
 rem    install.bat                 Install to all detected IDEs
 rem    install.bat --only=qoder    Install to one IDE only
-rem                                (codebuddy / qoder / qodercn / claude)
+rem                                (codebuddy / qoder / qodercn / claude / cursor)
 rem    install.bat --only=qodercn  Install into a non-standard skills
 rem      --dir="D:\...\skills"     dir (portable IDE / relocated data
 rem                                dir). --dir must pair with --only.
@@ -22,6 +22,9 @@ rem ============================================================
 
 for %%i in ("%~dp0..") do set "REPO=%%~fi"
 set "SKILLS=%REPO%\skills"
+rem resolve the script dir once: %~dp0 stops pointing at scripts\ after the
+rem shift loop below, which silently broke the sync-rules call at the end
+set "SCRIPTS=%REPO%\scripts"
 
 set "FORCE=0"
 set "ONLY="
@@ -49,7 +52,7 @@ goto parse
 :parse_done
 
 if defined CUSTOM_DIR if not defined ONLY (
-    echo [ERROR] --dir must be combined with --only=codebuddy^|qoder^|qodercn^|claude
+    echo [ERROR] --dir must be combined with --only=codebuddy^|qoder^|qodercn^|claude^|cursor
     exit /b 1
 )
 
@@ -69,6 +72,7 @@ call :install_ide codebuddy "%USERPROFILE%\.codebuddy\skills"
 call :install_ide qoder     "%USERPROFILE%\.qoder\skills"
 call :install_ide qodercn   "%USERPROFILE%\.qoder-cn\skills"
 call :install_ide claude    "%USERPROFILE%\.claude\skills"
+call :install_ide cursor    "%USERPROFILE%\.cursor\skills"
 
 echo.
 echo ==================== Summary ====================
@@ -82,9 +86,9 @@ if defined CUSTOM_DIR (
     exit /b 0
 )
 if defined ONLY (
-    call "%~dp0sync-rules.bat" --only=!ONLY!
+    call "%SCRIPTS%\sync-rules.bat" --only=!ONLY!
 ) else (
-    call "%~dp0sync-rules.bat"
+    call "%SCRIPTS%\sync-rules.bat"
 )
 exit /b 0
 
@@ -166,7 +170,7 @@ exit /b 0
 
 :usage
 echo anotherme skill installer
-echo Usage: install.bat [--only=codebuddy^|qoder^|qodercn^|claude] [--dir=SKILLS_PATH] [--force]
+echo Usage: install.bat [--only=codebuddy^|qoder^|qodercn^|claude^|cursor] [--dir=SKILLS_PATH] [--force]
 echo.
 echo   --only=IDE  target a single IDE
 echo   --dir=PATH  override that IDE's skills dir ^(portable / relocated
