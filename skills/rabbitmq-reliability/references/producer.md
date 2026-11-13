@@ -1,127 +1,82 @@
 # 生产者消息可靠性
 
-## 发布确认与路由失败回调
+不允许丢失的消息使用 Outbox 持久化事件，再由投递任务发布。`CorrelationData` 只携带本次发布的定位信息，不再保存用于重发的完整消息体；恢复数据来源是 Outbox，不是应用内存。
 
-- **强制**：必须设置 `publisher-confirm-type: correlated`、`publisher-returns: true`、`template.mandatory: true`，禁止使用 `none` 或 `mandatory: false`（会静默丢弃路由失败的消息）。
-- **强制**：必须实现 `ConfirmCallback` 和 `ReturnsCallback`，记录投递结果与路由失败信息。
-- **规范**：日志中禁止直接打印消息体原文，避免敏感数据泄露；仅记录消息长度等元信息，如需排查再脱敏后以 UTF-8 解码落库。
+## 先明确 Confirm 与 Return 的含义
 
-```java
-// 基础示意版（仅记录日志，生产环境用下文的生产级版本）
-@Slf4j @Component
-public class SimpleConfirmCallback implements RabbitTemplate.ConfirmCallback {
-    @Override
-    public void confirm(CorrelationData correlationData, boolean ack, String cause) {
-        if (ack) {
-            log.info("消息投递成功: correlationData={}", correlationData);
-        } else {
-            log.error("消息投递失败: correlationData={}, cause={}", correlationData, cause);
-        }
-    }
-}
+- ACK 表示 Broker 已接管消息。持久化消息路由到 durable queue 时涉及落盘；quorum queue 需要多数派接受。它不表示消费者已经处理成功。
+- nack 表示 Broker 无法成功处理并拒绝承担责任，不能简单解释为“未到达 Exchange”。
+- 不可路由且 `mandatory=true` 时，Broker 先返回 `basic.return`，随后仍可能发送 ACK。因此 ACK 不能替代 Return 处理。
+- Confirm 没有到达不代表一定失败。超时重发会产生重复，必须复用业务事件 ID。
 
-@Slf4j @Component
-public class RabbitReturnsCallback implements RabbitTemplate.ReturnsCallback {
-    @Override
-    public void returnedMessage(ReturnedMessage returned) {
-        byte[] body = returned.getMessage().getBody();
-        log.error("消息路由失败: exchange={}, routingKey={}, replyCode={}, replyText={}, bodyLength={}",
-                returned.getExchange(), returned.getRoutingKey(),
-                returned.getReplyCode(), returned.getReplyText(),
-                body != null ? body.length : 0);
-    }
-}
-```
+生产端必须同时处理 nack、return、发送异常和 Confirm 超时。回调注册使用 `RabbitTemplateCustomizer`，避免应用启动阶段才注册造成的空窗期。
 
-## CorrelationData 与失败重发
+## CorrelationData 与回调
 
-- **规范**：发送消息时传入自定义 `CorrelationData` 子类，保存 exchange、routingKey、payload，便于 `ack=false` 时重发；ID 使用业务唯一标识。
-- **强制**：`ConfirmCallback` 中 `ack=false`（消息未到达 Exchange）时必须触发重发，复用 `CorrelationDataWithMessage` 保存的 payload 重新投递；重发必须设次数上限（建议 ≤3 次），禁止无限重发。
-- **强制**：重发达到上限仍失败必须最终兜底——落库到失败消息表并告警，交由定时补偿任务或人工处理，禁止仅打日志后丢弃。
-- **规范**：重发会导致重复投递，消费端必须保证幂等（见 `consumer.md`）。
+以下 `OutboxPublishService` 是应用需要实现的持久化状态处理接口。回调方法应快速交给有界工作状态处理器，不直接执行长耗时数据库操作或循环重发。
 
 ```java
 @Getter
-public class CorrelationDataWithMessage extends CorrelationData {
-    private final String exchange;
-    private final String routingKey;
-    private final Object payload;
-    /** 已重发次数，用于限制重发上限；随 CorrelationData 在多次重发间传递累计 */
-    private final AtomicInteger retryCount = new AtomicInteger(0);
+public class PublishCorrelationData extends CorrelationData {
 
-    public CorrelationDataWithMessage(String id, String exchange, String routingKey, Object payload) {
-        super(id);
-        this.exchange = exchange;
-        this.routingKey = routingKey;
-        this.payload = payload;
+    private final long publishAttempt;
+
+    public PublishCorrelationData(String eventId, long publishAttempt) {
+        super(eventId);
+        this.publishAttempt = publishAttempt;
     }
 }
 ```
 
-### ack=false 重发落地（生产级 ConfirmCallback）
-
-上文基础版 `ConfirmCallback` 仅记录日志，生产环境必须升级为「重发 + 次数上限 + 最终兜底」。`FailedMessageStore`（失败消息落库）与 `AlarmNotifier`（告警）为需自行实现的兜底组件。
-
 ```java
-@Slf4j @Component
-public class RabbitConfirmCallback implements RabbitTemplate.ConfirmCallback {
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class RabbitPublishCallback implements RabbitTemplate.ConfirmCallback, RabbitTemplate.ReturnsCallback {
 
-    /** 重发次数上限 */
-    private static final int MAX_RETRY = 3;
+    private static final String PUBLISH_ATTEMPT_HEADER = "publishAttempt";
 
-    /**
-     * ConfirmCallback 经 RabbitTemplateCustomizer 注入到 RabbitTemplate，
-     * 若再反向依赖 RabbitTemplate 会形成循环依赖，构造器参数上加 @Lazy 打破；
-     * 保持构造器注入，禁止字段注入（对齐 springboot-spec 核心铁律第 1 条）。
-     */
-    private final RabbitTemplate rabbitTemplate;
-
-    private final FailedMessageStore failedMessageStore;  // 失败消息落库兜底
-    private final AlarmNotifier alarmNotifier;            // 告警组件
-
-    public RabbitConfirmCallback(@Lazy RabbitTemplate rabbitTemplate,
-                                 FailedMessageStore failedMessageStore,
-                                 AlarmNotifier alarmNotifier) {
-        this.rabbitTemplate = rabbitTemplate;
-        this.failedMessageStore = failedMessageStore;
-        this.alarmNotifier = alarmNotifier;
-    }
+    private final OutboxPublishService outboxPublishService;
 
     @Override
     public void confirm(CorrelationData correlationData, boolean ack, String cause) {
+        if (!(correlationData instanceof PublishCorrelationData)) {
+            if (!ack) {
+                log.error("消息发布被 nack 且缺少 Outbox 定位信息: cause={}", cause);
+            }
+            return;
+        }
+        PublishCorrelationData data = (PublishCorrelationData) correlationData;
         if (ack) {
-            log.info("消息投递成功: id={}", correlationData != null ? correlationData.getId() : null);
+            outboxPublishService.onAck(data.getId(), data.getPublishAttempt());
             return;
         }
-        // ack=false：消息未到达 Exchange，需要重发
-        if (!(correlationData instanceof CorrelationDataWithMessage)) {
-            log.error("消息投递失败且缺少重发上下文，无法重发: cause={}", cause);
+        log.warn("消息发布被 nack: eventId={}, publishAttempt={}, cause={}",
+                data.getId(), data.getPublishAttempt(), cause);
+        outboxPublishService.onNack(data.getId(), data.getPublishAttempt(), cause);
+    }
+
+    @Override
+    public void returnedMessage(ReturnedMessage returned) {
+        MessageProperties properties = returned.getMessage().getMessageProperties();
+        Object attemptHeader = properties.getHeaders().get(PUBLISH_ATTEMPT_HEADER);
+        String eventId = properties.getMessageId();
+        byte[] body = returned.getMessage().getBody();
+        log.error("消息未路由到队列: eventId={}, exchange={}, routingKey={}, replyCode={}, bodyLength={}",
+                eventId, returned.getExchange(), returned.getRoutingKey(),
+                returned.getReplyCode(), body != null ? body.length : 0);
+        if (eventId == null || !(attemptHeader instanceof Number)) {
             return;
         }
-        CorrelationDataWithMessage cd = (CorrelationDataWithMessage) correlationData;
-        int retry = cd.getRetryCount().incrementAndGet();
-        if (retry <= MAX_RETRY) {
-            log.warn("消息投递失败，第 {} 次重发: id={}, exchange={}, routingKey={}, cause={}",
-                    retry, cd.getId(), cd.getExchange(), cd.getRoutingKey(), cause);
-            // 复用保存的 exchange/routingKey/payload 重新投递，沿用同一 cd 以累计重发次数
-            rabbitTemplate.convertAndSend(cd.getExchange(), cd.getRoutingKey(), cd.getPayload(), cd);
-        } else {
-            // 达到上限：最终兜底——落库 + 告警，禁止直接丢弃
-            log.error("消息重发 {} 次仍失败，转失败消息表兜底: id={}, exchange={}, routingKey={}",
-                    MAX_RETRY, cd.getId(), cd.getExchange(), cd.getRoutingKey());
-            failedMessageStore.saveSendFailure(cd.getId(), cd.getExchange(), cd.getRoutingKey(), cd.getPayload(), cause);
-            alarmNotifier.notifySendFailed(cd.getId(), cd.getExchange(), cd.getRoutingKey());
-        }
+        long publishAttempt = ((Number) attemptHeader).longValue();
+        outboxPublishService.onReturn(eventId, publishAttempt, returned.getReplyText());
     }
 }
 ```
 
-## 消息发送规范
+`onAck`、`onNack` 和 `onReturn` 必须按“事件 ID + 发送次数”做条件更新，防止旧回调覆盖新状态。Return 已发生时，同次发布的迟到 ACK 不得再将记录更新为 `SENT`。
 
-- **强制**：消息体使用 JSON 序列化（`Jackson2JsonMessageConverter`），消息体类必须实现 `Serializable` 并定义 `serialVersionUID`。
-- **规范**：消息体保持精简，禁止传输大对象。
-- **强制**：跨服务消费时必须配置 `DefaultJackson2JavaTypeMapper` 信任包名，避免 `__TypeId__` header 不匹配导致反序列化失败。
-- **规范**：使用 `RabbitTemplateCustomizer` 注册回调，在 `RabbitTemplate` 创建阶段即生效，避免 `ApplicationRunner` 的回调空窗期。
+## 发布与回调注册
 
 ```java
 @Configuration
@@ -137,24 +92,52 @@ public class RabbitConfig {
     }
 
     @Bean
-    public RabbitTemplateCustomizer rabbitTemplateCustomizer(RabbitConfirmCallback confirmCallback,
-                                                              RabbitReturnsCallback returnsCallback) {
+    public RabbitTemplateCustomizer rabbitTemplateCustomizer(RabbitPublishCallback publishCallback) {
         return template -> {
-            template.setConfirmCallback(confirmCallback);
-            template.setReturnsCallback(returnsCallback);
+            template.setConfirmCallback(publishCallback);
+            template.setReturnsCallback(publishCallback);
         };
     }
 }
+```
 
-@RequiredArgsConstructor @Component
-public class AlarmPublisher {
+```java
+@Component
+@RequiredArgsConstructor
+public class OutboxPublisher {
+
+    private static final String PUBLISH_ATTEMPT_HEADER = "publishAttempt";
 
     private final RabbitTemplate rabbitTemplate;
+    private final OutboxPublishService outboxPublishService;
 
-    public void publish(String routingKey, Object payload, String messageId) {
-        CorrelationDataWithMessage cd = new CorrelationDataWithMessage(
-                messageId, "nsp.alarm.exchange", routingKey, payload);
-        rabbitTemplate.convertAndSend("nsp.alarm.exchange", routingKey, payload, cd);
+    public void publish(String eventId, long publishAttempt, String exchange,
+                        String routingKey, Object payload) {
+        PublishCorrelationData correlationData = new PublishCorrelationData(eventId, publishAttempt);
+        try {
+            rabbitTemplate.convertAndSend(exchange, routingKey, payload, message -> {
+                MessageProperties properties = message.getMessageProperties();
+                properties.setMessageId(eventId);
+                properties.setHeader(PUBLISH_ATTEMPT_HEADER, publishAttempt);
+                return message;
+            }, correlationData);
+        } catch (RuntimeException e) {
+            outboxPublishService.onPublishException(eventId, publishAttempt, e.getMessage());
+            log.warn("消息调用发布失败，等待 Outbox 补偿: eventId={}, publishAttempt={}",
+                    eventId, publishAttempt, e);
+        }
     }
 }
 ```
+
+调用 `publish` 前，Outbox 记录必须已持久化为本次 `SENDING` 尝试。方法返回只表示客户端已发起发布，是否成功由回调和超时回收任务确定。
+
+## 消息格式与性能
+
+- 使用 `Jackson2JsonMessageConverter` 时，消息类不必实现 `Serializable` 或定义 `serialVersionUID`。
+- 信任包只填写项目实际 DTO 包，禁止 `*` 或 `java.util` 等过宽范围。
+- 消息体保持精简，大文件传受控引用，不把文件内容塞进 MQ。
+- Confirm 使用异步流水线。成功路径更新指标，不逐条记录 INFO；nack、return、超时保留事件 ID、路由和错误摘要。
+- 禁止在 Confirm 回调中立即重发三次。重试调度、退避、上限和最终告警统一由 Outbox 任务处理，详见 `outbox.md`。
+
+参考：[RabbitMQ Publisher Confirms](https://www.rabbitmq.com/docs/confirms#publisher-confirms)。

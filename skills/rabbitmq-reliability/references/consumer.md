@@ -1,82 +1,82 @@
 # 消费者编写规范
 
-## 确认与重试
+消费者按“业务事务成功提交后才 ACK”设计。RabbitMQ 和 Spring 的重投机制会带来重复消息，因此幂等是正常处理流程的一部分，不是异常补丁。
 
-- **强制**：`acknowledge-mode` 必须为 `auto`（正常返回自动 ack；抛异常先触发本地重试，重试耗尽后自动 nack），禁止 `manual`（批量确认等明确业务需要除外）。
-- **强制**：必须开启消费者重试，`max-attempts` 不超过 3 次，`initial-interval` 不低于 1000ms。
-- **强制**：重试耗尽后消息默认丢弃，核心业务必须配置死信队列供人工排查。
-- **规范**：含事务时 `stateless` 设为 `false`，每次重试创建新事务避免状态污染。
+## ACK 与事务边界
 
-## 异常处理与幂等
+通常使用 Spring `AcknowledgeMode.AUTO`：监听方法正常返回后由容器 ACK，抛出异常时按重试和拒绝策略处理。它不是 AMQP 协议中收到即丢弃的 auto-ack；后者对应 Spring 的 `AcknowledgeMode.NONE`，核心消息禁止使用。
 
-- **强制**：使用 `@RabbitListener` 注解声明消费者，指定 queue 名称。
-- **强制**：消费方法必须捕获业务异常并处理，业务异常抛 `AmqpRejectAndDontRequeueException` 拒绝且不重新入队（消息默认丢弃，仅当 Queue 配置 DLX 时才转死信）。
-- **说明**：未捕获的非业务异常触发重试，重试耗尽后 nack 进入死信队列（需配置 DLX）。
-- **强制**：消费者必须保证幂等性（数据库唯一索引 / Redis 分布式锁 / 业务状态校验，三选一）。
-- **强制**：幂等键必须使用业务唯一标识（如 messageId）并设置过期时间，防止 Redis 键无限增长。
-- **规范**：采用「处理前 SETNX 占位」的幂等方案时，处理失败（尤其需重试的异常）必须删除幂等键，否则重试/重投会被幂等拦截，导致消息实际未被处理。
+只有批量 ACK、异步业务处理等容器无法判断完成时机的场景才使用 `MANUAL`。手动模式必须保证每条消息最终 ACK 或 NACK，且只能在接收它的 Channel 上操作。
+
+幂等记录与业务更新必须处于同一个本地事务。消息 DTO 携带的 `messageId` 必须与发布时写入的 AMQP `messageId` 一致，或者直接读取消息属性，不能由消费端重新生成。
+
+1. 以 `messageId` 或业务唯一键插入消费记录，建立数据库唯一索引。
+2. 在同一事务中更新业务数据并提交。
+3. 唯一键冲突表示已处理，按成功返回，让容器 ACK。
+4. 业务失败则整个事务回滚；临时异常继续抛出，永久异常拒绝且不重投。
 
 ```java
-@Slf4j @Component @RequiredArgsConstructor
+@Slf4j
+@Component
+@RequiredArgsConstructor
 public class AlarmConsumer {
 
     private final AlarmService alarmService;
-    private final StringRedisTemplate redisTemplate;
-
-    private static final String IDEMPOTENT_PREFIX = "mq:idem:alarm:";
-    private static final Duration IDEMPOTENT_TTL = Duration.ofHours(24);
 
     @RabbitListener(queues = "nsp.alarm.queue")
     public void handleAlarm(AlarmMessage message) {
-        String idemKey = IDEMPOTENT_PREFIX + message.getMessageId();
-        // SETNX 占位：仅首次写入返回 true；重复投递直接跳过，保证幂等
-        Boolean first = redisTemplate.opsForValue().setIfAbsent(idemKey, "1", IDEMPOTENT_TTL);
-        if (!Boolean.TRUE.equals(first)) {
-            log.warn("重复消息已忽略: messageId={}", message.getMessageId());
-            return;
-        }
         try {
-            log.info("收到报警消息: alarmId={}", message.getAlarmId());
+            // process 的事务实现同时完成消费记录唯一写入和业务更新
             alarmService.process(message);
-        } catch (BusinessException e) {
-            // 业务异常不可重试：回滚幂等键后拒绝且不重投（配 DLX 则转死信）
-            redisTemplate.delete(idemKey);
-            log.error("报警消息处理失败(业务异常): alarmId={}", message.getAlarmId(), e);
+        } catch (PermanentBusinessException e) {
+            log.error("报警消息存在永久业务错误: messageId={}", message.getMessageId(), e);
             throw new AmqpRejectAndDontRequeueException(e);
-        } catch (RuntimeException e) {
-            // 非业务异常：回滚幂等键后抛出，交由容器重试；否则重试会被幂等键挡住
-            redisTemplate.delete(idemKey);
-            throw e;
         }
     }
 }
 ```
 
-## 死信队列消费与告警
+`AlarmService.process` 的事务实现需要识别唯一键冲突并正常返回，不能把重复消息当成系统错误。若项目使用 Redis 前置去重，Redis 故障或键过期后仍须由数据库约束兜底；不要在业务异常后简单删除 SETNX 键，就把这套流程视为严格幂等。
 
-- **强制**：死信队列必须有专门的消费者监听，做「落库 + 告警」，这是失败消息的最后一道防线，绝不能无人消费（死信 Exchange/Queue 声明见 `declaration.md`）。
-- **规范**：死信消费者**不做业务重试**（避免把毒消息又投回业务队列形成循环），仅记录、落库、告警，是否重放由人工或独立补偿任务决定。
-- **规范**：遵守核心铁律 7，日志禁止打印死信消息体原文，仅记录长度等元信息；如需落库原文，含敏感数据时先脱敏。
+## 异常分类与重试
+
+- 数据库死锁、短时网络抖动等临时异常可以本地有限重试；含上层事务时设置 `stateless: false`，并提供唯一 `messageId`。
+- 参数错误、反序列化失败、明确不可恢复的业务异常不应重试，直接 NACK 且不 requeue，由 DLX 接收。
+- 下游持续不可用时，本地重试会占用消费线程。改用 RabbitMQ 当前版本支持的延迟重试，或独立重试 Exchange/Queue，并设置总次数、退避和最终 DLQ。
+- 通过重试策略明确排除永久异常。不要仅依赖异常类名，也不要把所有 `RuntimeException` 无差别重试。
+- `default-requeue-rejected: false` 只决定最终失败不返回原队列。没有配置 DLX 时消息仍会被丢弃。
+- 无限 requeue 会消耗 CPU、网络并阻塞后续消息，禁止使用。
+
+## 死信处理与重放
+
+死信消费者负责持久化失败消息和告警，不在原业务线程中反复重试。存储操作必须幂等，可用消息 ID、原队列、死信原因和死信次数组成唯一约束，避免 DLX 重投产生重复记录。
 
 ```java
-@Slf4j @Component @RequiredArgsConstructor
+@Slf4j
+@Component
+@RequiredArgsConstructor
 public class AlarmDeadLetterConsumer {
 
-    private final FailedMessageStore failedMessageStore;  // 死信落库，供人工排查/重放
-    private final AlarmNotifier alarmNotifier;            // 告警组件（邮件/钉钉/企业微信等）
+    private final FailedMessageStore failedMessageStore;
+    private final AlarmNotifier alarmNotifier;
 
     @RabbitListener(queues = "nsp.alarm.dead.queue")
     public void handleDeadLetter(Message message) {
+        MessageProperties properties = message.getMessageProperties();
         byte[] body = message.getBody();
-        // 死信元信息在 header "x-death"（List<Map>，含 reason=expired/rejected/maxlen、原队列、次数）
-        Object xDeath = message.getMessageProperties().getHeaders().get("x-death");
-        String reason = xDeath != null ? xDeath.toString() : "unknown";
-        log.error("收到死信消息: reason={}, bodyLength={}", reason, body != null ? body.length : 0);
-
-        // 1) 落库：保存原始消息 + 死信元信息，供后续人工排查与重放（敏感数据先脱敏）
-        failedMessageStore.saveDeadLetter(body, message.getMessageProperties());
-        // 2) 告警：死信代表有消息未被正常处理，必须及时通知责任人
-        alarmNotifier.notifyDeadLetter(message.getMessageProperties().getReceivedRoutingKey());
+        Object xDeath = properties.getHeaders().get("x-death");
+        log.error("收到死信消息: messageId={}, death={}, bodyLength={}",
+                properties.getMessageId(), xDeath, body != null ? body.length : 0);
+        failedMessageStore.saveDeadLetterIfAbsent(properties.getMessageId(), body, properties);
+        alarmNotifier.notifyDeadLetter(properties.getMessageId());
     }
 }
 ```
+
+死信落库或告警失败时不得吞掉异常后正常返回，否则容器会 ACK 并删除最后一条可恢复消息。为死信监听单独设计存储故障时的重试、重投或备用告警策略，避免死信循环。
+
+重放前先修复路由、消息格式或下游故障，再通过独立补偿任务发布。重放复用原业务事件 ID，消费幂等继续生效；不得让 DLQ 消费者直接调用原业务并自动无限重放。
+
+日志不得打印消息体原文。确需保存原始 payload 时，限制访问权限并对敏感字段脱敏。
+
+参考：[RabbitMQ Reliability Guide](https://www.rabbitmq.com/docs/reliability) 和 [Spring AMQP Resilience](https://docs.spring.io/spring-amqp/reference/amqp/resilience-recovering-from-errors-and-broker-failures.html)。
