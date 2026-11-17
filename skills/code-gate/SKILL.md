@@ -72,5 +72,5 @@ AI 写代码、AI 写测试、AI 跑测试、AI 说通过——判断主体始�
 | ---- | -------- |
 | 分级判据细则、边界判例（越权/事务/幂等/并发）、按级别的验收动作 | `references/change-classification.md` |
 | ArchUnit 规则样例（分层依赖、Service 分层、字段注入、Swagger 注解）、Maven Enforcer 禁令、存量冻结与排障 | `references/architecture-rules.md` |
-| 变异测试配置与阈值、契约快照（OpenAPI / Flyway）、覆盖率陷阱与反模式 | `references/test-effectiveness.md` |
+| 变异测试配置与阈值、契约快照（OpenAPI / DB 脚本）、覆盖率陷阱与反模式 | `references/test-effectiveness.md` |
 | 独立审查的输入输出约定、审查清单、阻断与建议分级、确认偏误规避 | `references/review-protocol.md` |

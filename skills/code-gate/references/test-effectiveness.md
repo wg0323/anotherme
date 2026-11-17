@@ -93,11 +93,10 @@ git diff docs/api/openapi.json
 
 ### DB 契约
 
-```bash
-mvn flyway:validate
-```
+数据库脚本由人工执行，不使用 Flyway/Liquibase（见 `springboot-spec` 核心铁律 15），没有 checksum 兜底，靠两道人工契约：
 
-它校验已执行脚本的 checksum，能抓"改了历史上已跑过的脚本"——这是 AI 最容易犯的错之一（本地改完忘了别人已经执行过）。它抓不到"脚本能不能在新库上跑通"，后者要在影子库执行一次 `flyway:migrate`。
+1. `git diff` 看 `db/` 目录：只允许新增脚本。历史脚本被改动即破坏契约——别人可能已经执行过，改动不会重跑，库与脚本从此对不上，这正是 AI 最容易犯的错。
+2. 在影子库按顺序完整执行一遍 `db/` 下的全部脚本：验证新库能从零建起，这条 `git diff` 抓不到。
 
 ### 消息契约
 

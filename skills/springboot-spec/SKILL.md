@@ -27,6 +27,7 @@ description: |
 12. 新建工程必须交付自述文件：工程根目录固定输出 `README.md`（全大写 + `.md`），章节骨架、按项目类型裁剪与填写红线统一遵循 `doc-writing` 技能的 `references/readme-template.md`（唯一真相源，未安装该技能时按其骨架生成）。本栈差异项：环境要求写 JDK/Maven/MySQL/Redis 实际版本；快速开始按「导入 SQL → 改 `application-dev.yml` → 激活 dev Profile 启动」给出当前终端可直接复制执行的命令；配置说明列 `spring.datasource.*` 及 Boot 3.x 的 `spring.data.redis.*`、Boot 2.x 的 `spring.redis.*` 等实际关键项；API 文档写实际访问地址 `http://localhost:{server.port}/doc.html` 并说明生产环境用 `knife4j.production=true` 关闭；部署指南写 `mvn package` + `java -jar` 与日志路径；纯后端工程省略前端/小程序启动小节。
 13. 工程编码统一 UTF-8（根治 Windows 控制台乱码）：新建工程必须在五处同时对齐 UTF-8——① 源文件（VSCode `files.encoding=utf8`）；② 构建（`pom.xml` 的 `project.build.sourceEncoding`）；③ HTTP（`application.yml` 的 `server.servlet.encoding`）；④ JVM 输出（`.vscode/launch.json` 的 `vmArgs` + `console: integratedTerminal`）；⑤ 终端代码页（终端 profile 启动即 `chcp 65001`），缺一处都可能残留乱码。控制台乱码根因是「JVM 输出编码（写入端）与终端代码页（解读端）不匹配」，`application.yml` 只管 HTTP、`pom.xml` 只管构建，均无法根治控制台乱码；Debug Console（`internalConsole`）中文乱码为已知无解限制，必须走集成终端。五处具体配置、按 JDK 版本（8~17 与 18+）的 `vmArgs` 差异、验证清单与常见坑详见 `env-troubleshooting` 技能的 `references/console-encoding.md`（唯一真相源；未安装该技能时按本条列出的五处自行落地）。
 14. 主键与雪花 ID 序列化：Entity 主键统一 `Long id`，`application.yml` 显式配置 `mybatis-plus.global-config.db-config.id-type: ASSIGN_ID`，禁止 `@TableId(type = IdType.AUTO)`；实际返回前端的 VO / DTO 中，雪花主键及关联 ID 字段必须用 `@JsonSerialize(using = ToStringSerializer.class)` 序列化为字符串，避免 JS Number 精度丢失，不能只标注不直接暴露的 Entity。建表、多实例分配与原生 MyBatis 的主键规则遵循 `db-spec` 技能「主键策略规约」。
+15. 数据库脚本人工执行，禁止与应用启动绑定：建表、变更与初始化数据脚本一律由人手工执行——个人项目由开发者本人执行，公司项目由 DBA 审核后执行，应用启动不承担任何改库职责。**禁止**在 `pom.xml` 引入 `flyway-core`/`liquibase-core` 等迁移组件，**禁止** `spring.flyway.*`/`spring.liquibase.*` 配置，**禁止** `spring.sql.init.mode=always` 及启动钩子里执行 DDL/DML；Flyway/Liquibase 虽是 Spring Boot 官方推荐做法，也不构成引入理由。脚本放工程 `db/` 目录（布局见 `references/project-structure.md`），执行顺序写进 README 的「导入 SQL」步骤；脚本自身的 SQL 规约遵循 `db-spec` 技能「脚本交付规约」。
 
 ## 新建工程骨架（强制产出清单）
 
@@ -73,5 +74,6 @@ src/main/java/{basePackage}/
 6. 不存在连续 ≥2 行 `target.setXxx(source.getXxx())` 的逐字段拷贝；满足抽类条件的转换（同一转换 ≥2 处调用、被集合映射引用、存在非等价映射）都在 `converter` 包的 `XxxConverter` 静态方法中，其余转换就地一行完成；`pom.xml` 未引入 MapStruct 与 Apache `commons-beanutils`。
 7. 新建工程已产出 `src/main/resources/logback-spring.xml`（已 include `defaults.xml` 并使用内置 `${CONSOLE_LOG_PATTERN}`/`${FILE_LOG_PATTERN}`，CONSOLE + 滚动 FILE，`SizeAndTimeBasedRollingPolicy`），应用启动后 `logs/` 目录下日志文件已落盘。
 8. 每个 Controller 类有 `@Tag`，每个映射方法有 `@Operation` 与至少一条 `@ApiResponse`，每个路径变量/查询参数/请求头有 `@Parameter`，请求体 DTO 与响应 VO 的类及其字段都有 `@Schema`，`pom.xml` 已开启 `-parameters`。
+9. `pom.xml` 无 `flyway-core`/`liquibase-core` 依赖，`application*.yml` 无 `spring.flyway.*`/`spring.liquibase.*` 与 `spring.sql.init.mode=always`，不存在启动期自动执行 SQL 的代码；数据库脚本位于 `db/` 目录、由人工执行。
 
 本节只覆盖本栈结构层面的自检，属于生成者自证，不能单独作为可交付结论。进入交付阶段后再加载 `code-gate`，按实际改动分级选择架构断言、变异测试、独立审查与证据格式；无需在编码开始前预载。
