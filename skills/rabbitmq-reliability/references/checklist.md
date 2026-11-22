@@ -5,8 +5,9 @@
 | 检查项 | 要求 | 验证位置 |
 | ---- | ---- | ---- |
 | 环境凭据 | 生产账号密码无默认值，权限最小化 | `application-prod.yml`、环境变量 |
-| 发布确认 | 不允许丢失的消息开启异步 correlated Confirm | `publisher-confirm-type` |
-| 路由失败 | 开启 returns/mandatory，Return 更新持久化状态 | RabbitMQ 配置、`ReturnsCallback` |
+| 版本档位 | 配置键与回调 API 匹配 pom 的 Boot 档位，无跨档写法 | `pom.xml`、`version-diff.md` |
+| 发布确认 | 不允许丢失的消息开启异步 correlated Confirm（2.0/2.1 为 `publisher-confirms`） | `publisher-confirm-type` |
+| 路由失败 | 开启 returns/mandatory，Return 更新持久化状态 | RabbitMQ 配置、`ReturnsCallback`（2.2 及以前为五参 `ReturnCallback`） |
 | Confirm 含义 | 未把 ACK 当作消费者业务成功 | 代码审查 |
 | 发送持久化 | 业务与 Outbox 同事务，进程重启后可恢复 | `mq_outbox`、业务事务 |
 | 发送状态机 | 覆盖 PENDING/SENDING/SENT/FAILED 和租约回收 | Outbox 实现 |

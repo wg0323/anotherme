@@ -38,6 +38,7 @@ spring:
 
 ## 配置边界
 
+- `publisher-confirm-type` 自 Spring Boot 2.2 起提供；2.0/2.1 只能用 `publisher-confirms: true`。`publisher-returns`、`template.mandatory` 与 listener 各键（含 `retry.*`）三档一致，档位差异见 `version-diff.md`。
 - `prefetch: 1` 会限制流水线并降低吞吐。RabbitMQ 官方给出的常见高吞吐参考区间是 100～300，但长耗时任务应从更小的值开始，避免进程崩溃时大量重投或内存堆积。
 - 本地重试会占用消费线程。下游长时间不可用时，应停止本地重试，改用有次数上限的延迟重试；永久业务异常、反序列化错误和参数错误不得反复重试。
 - Spring Retry 默认可能遍历到的异常范围取决于项目配置。通过自定义重试策略或拦截器排除永久异常，不能仅抛 `AmqpRejectAndDontRequeueException` 就假设本地重试一定会跳过。

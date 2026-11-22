@@ -9,7 +9,7 @@
 - 不可路由且 `mandatory=true` 时，Broker 先返回 `basic.return`，随后仍可能发送 ACK。因此 ACK 不能替代 Return 处理。
 - Confirm 没有到达不代表一定失败。超时重发会产生重复，必须复用业务事件 ID。
 
-生产端必须同时处理 nack、return、发送异常和 Confirm 超时。回调注册使用 `RabbitTemplateCustomizer`，避免应用启动阶段才注册造成的空窗期。
+生产端必须同时处理 nack、return、发送异常和 Confirm 超时。回调注册使用 `RabbitTemplateCustomizer`（Spring Boot 3.1+ 才有），避免应用启动阶段才注册造成的空窗期；Boot 2.x 与 3.0 的等价注册方式见 `version-diff.md`，不要直接把本文件的 Bean 定义复制到低版本工程。
 
 ## CorrelationData 与回调
 
@@ -73,6 +73,8 @@ public class RabbitPublishCallback implements RabbitTemplate.ConfirmCallback, Ra
     }
 }
 ```
+
+示例中的 `implements RabbitTemplate.ReturnsCallback` 是 Spring AMQP 2.3+ / 3.x 的写法；2.2 及以前改为 `implements RabbitTemplate.ReturnCallback` 并使用五参 `returnedMessage`，见 `version-diff.md`。
 
 `onAck`、`onNack` 和 `onReturn` 必须按“事件 ID + 发送次数”做条件更新，防止旧回调覆盖新状态。Return 已发生时，同次发布的迟到 ACK 不得再将记录更新为 `SENT`。
 

@@ -9,6 +9,19 @@ description: |
 
 # SpringBoot 工程规范
 
+## 版本基线（动手前先判档）
+
+同一套写法不跨大版本通用：Boot 2.x 用 `javax.*`、`spring.redis.*`，Boot 3.x 用 `jakarta.*`、`spring.data.redis.*`，部分类只在其中一档存在。动手前先读 `pom.xml` 判档，再决定依赖坐标、配置键与 import，判据按序取值、命中即停：`spring-boot-starter-parent` 的 `<version>` → `dependencyManagement` 中 `spring-boot-dependencies` 的版本 → `<spring-boot.version>` 属性 → `spring-boot-starter-*` 的直接版本。
+
+| 档位 | Spring Boot | JDK | 高频差异 |
+| ---- | ---- | ---- | ---- |
+| 老项目 | 2.x | 8 / 11 | `javax.validation.*`、`spring.redis.*`、`mysql:mysql-connector-java`、`mybatis-plus-boot-starter`、`druid-spring-boot-starter` |
+| 新项目 | 3.x | 17+ | `jakarta.validation.*`、`spring.data.redis.*`、`com.mysql:mysql-connector-j`、`mybatis-plus-spring-boot3-starter`、`druid-spring-boot-3-starter` |
+
+- 依赖坐标、配置键、import 包名、可用 API 必须同档，禁止混用；不得把一档的示例贴到另一档后靠 IDE 编译报错去反推版本。
+- JDK 档位看 `<java.version>` / `<maven.compiler.release>`，与 Boot 档位必须自洽：Boot 2.x 工程不得出现 `record`、`var`、文本块、`List.of`。
+- 第三方库的变体命名规律、逐项对照表、判定与核对命令见 `references/version-baseline.md`；RabbitMQ 的档位差异见 `rabbitmq-reliability` 技能的 `references/version-diff.md`。
+
 ## 核心铁律
 
 **前置门禁**：本技能管的是工程结构、分层、依赖注入与接口约定；凡产出或修改 `.java` 源文件，必须同时加载 `java-spec` 并逐条遵守其命名、常量、集合、并发等强制规范。两个技能同时适用，不得以“已加载本技能”为由跳过 `java-spec`。
@@ -20,7 +33,7 @@ description: |
 5. 统一使用 `@ControllerAdvice` 全局异常处理；自定义业务异常继承 `RuntimeException`；异常信息不暴露系统内部细节。
 6. 安全开发基线：所有外部输入必须校验；隶属用户的资源必须做归属权校验，严禁仅凭登录态操作他人数据；敏感数据（密码、身份证等）禁止明文存储、禁止输出到日志，前端展示与日志打印必须脱敏；SQL 必须参数绑定（MyBatis 用 `#{}`，禁止 `${}`），禁止字符串拼接；涉及登录态、角色权限或资源归属的接口必须用 Spring Security 做认证授权，禁止手写 Token 校验与自定义拦截器鉴权，纯 CRUD/内部工具不强制引入；短信/支付等平台资源接口必须限流、冷却与人机校验；详见 `references/security.md`。
 7. 包名小写、点分隔符间有且仅有一个自然语义英语单词、单数形式。
-8. Service 分层强制（缺一即不合规）：所有业务 Service 一律「接口 + 实现」两个文件，接口在 `service` 包、实现在 `service.impl` 包；**禁止只产出无接口的 `@Service public class XxxService`**。按是否绑定 Entity 分两档，判据为本 Service 名下是否存在同实体名的 `entity` 与 `mapper`：① entity 绑定型（`pom.xml` 含 `mybatis-plus-boot-starter`）—— 接口 `extends IService<{Entity}>`，实现 `extends ServiceImpl<{Entity}Mapper, {Entity}> implements {Entity}Service`（泛型顺序 Mapper 在前，不可颠倒），增删改查直接用父类 `save`/`getById`/`list`/`baseMapper`，不再额外注入 `{Entity}Mapper` 字段；② 业务编排型（无绑定 Entity，如 `OrderCommandService`）—— 纯接口，实现 `implements` 接口并经构造器注入依赖，不得为凑格式继承 `IService`/`ServiceImpl`。禁止两种降级：把 entity 绑定型写成「纯接口 + 注入 Mapper」，或只 `extends ServiceImpl` 而不 `implements` 自定义接口。纯 MyBatis 项目（无 MyBatis-Plus 依赖）无 `IService` 可用时，entity 绑定型退化为「纯接口 + 实现注入 Mapper」。本约定是团队分层规范，不适用「避免过度封装 / 只写最少代码」的简化判断，也不因存量项目风格而降级。
+8. Service 分层强制（缺一即不合规）：所有业务 Service 一律「接口 + 实现」两个文件，接口在 `service` 包、实现在 `service.impl` 包；**禁止只产出无接口的 `@Service public class XxxService`**。按是否绑定 Entity 分两档，判据为本 Service 名下是否存在同实体名的 `entity` 与 `mapper`：① entity 绑定型（`pom.xml` 含 `mybatis-plus-boot-starter`，Boot 3 工程为 `mybatis-plus-spring-boot3-starter`）—— 接口 `extends IService<{Entity}>`，实现 `extends ServiceImpl<{Entity}Mapper, {Entity}> implements {Entity}Service`（泛型顺序 Mapper 在前，不可颠倒），增删改查直接用父类 `save`/`getById`/`list`/`baseMapper`，不再额外注入 `{Entity}Mapper` 字段；② 业务编排型（无绑定 Entity，如 `OrderCommandService`）—— 纯接口，实现 `implements` 接口并经构造器注入依赖，不得为凑格式继承 `IService`/`ServiceImpl`。禁止两种降级：把 entity 绑定型写成「纯接口 + 注入 Mapper」，或只 `extends ServiceImpl` 而不 `implements` 自定义接口。纯 MyBatis 项目（无 MyBatis-Plus 依赖）无 `IService` 可用时，entity 绑定型退化为「纯接口 + 实现注入 Mapper」。本约定是团队分层规范，不适用「避免过度封装 / 只写最少代码」的简化判断，也不因存量项目风格而降级。
 9. 日志输出基线：默认「控制台 + 滚动日志文件（按时间 + 大小切分）」；仅当明确要求关注/分离错误日志时，追加独立 ERROR 日志文件。统一使用 `src/main/resources/logback-spring.xml`，必须 `include org/springframework/boot/logging/logback/defaults.xml` 并使用内置 `${CONSOLE_LOG_PATTERN}`/`${FILE_LOG_PATTERN}`（禁止自定义 pattern 变量），滚动策略用 `SizeAndTimeBasedRollingPolicy`（JDK 8/Spring Boot 2.x 与 JDK 17+/3.x 通用；禁用已弃用的 `SizeAndTimeBasedFNATP`）；详见 `references/logging.md`。
 10. API 文档与 Controller 注解基线（强制）：对外接口必须提供在线文档，统一使用 Knife4j（基于 springdoc-openapi / OpenAPI3）。**所有 Controller 类必须有 `@Tag`，每个映射方法必须有 `@Operation`，每个路径变量/查询参数/请求头必须有 `@Parameter`，每个方法至少一条 `@ApiResponse` 描述成功返回**；请求体与响应体都不给参数加 `@Parameter`，请求 DTO 与响应 VO 的类及其每个字段必须用 `@Schema` 描述（`description` 必填，嵌套对象与集合元素同样要标）；`pom.xml` 必须开启 `-parameters`，否则参数名丢失。缺任一项视为不合规，不得交付。Swagger 注解包在 Boot 2.x 与 3.x 完全一致（`io.swagger.v3.oas.annotations.*`），换版本只换依赖坐标与 `javax`/`jakarta` 校验包，不换注解；禁止已停更的 springfox（Boot 2.6+ 启动崩溃、Boot 3.x 不兼容）。Boot 3.x 依赖必须带 `jakarta` 后缀；原版 `com.github.xiaoymin` 4.5.0 适配 Boot 2.6~3.3，Boot 3.4/3.5+ 换社区 fork `com.baizhukui` 5.x（drop-in，仅改 groupId）。生产环境必须用 `knife4j.production=true` 或鉴权关闭文档裸奔；强制清单 C1~C7、逐参数写法与自检命令详见 `references/api-doc.md`。
 11. 构建默认跳过测试（目的仅是打包提速，不降低测试要求）：新建工程在 `pom.xml` 的 `<properties>` 中配置 `<maven.test.skip>true</maven.test.skip>`，使 `mvn compile`/`package`/`install` 全程自动跳过测试的编译与执行，无需每次手动加 `-DskipTests`；运行测试不改 pom，命令行覆盖即可：`mvn test -Dmaven.test.skip=false`。交付含核心业务逻辑的代码前，必须用该命令显式运行并通过对应测试，禁止只写不跑（执行纪律遵循 test-execution 技能）；详见 `references/testing.md`。
@@ -46,13 +59,14 @@ src/main/java/{basePackage}/
 - 每个 `XxxService` 必须在 `service.impl` 有对应 `XxxServiceImpl`；Controller 与跨 Service 调用只注入接口，不注入实现类。
 - `converter/` 按需创建：只有满足铁律 2 的抽类条件（同一转换 ≥2 处调用、被集合映射引用、存在非等价映射）时才建 `XxxConverter`，不为每个 Entity 预建转换类。
 - 新建工程必须在 `pom.xml` 声明 lombok 依赖（`<optional>true</optional>`，版本交由 `spring-boot-dependencies` 管理、不写 version），否则 `@RequiredArgsConstructor` 无法编译。
-- 新建工程使用 MyBatis-Plus 时必须在 `pom.xml` 声明 `mybatis-plus-boot-starter`（不写死 version），否则 entity 绑定型 Service 无法 `extends IService`/`ServiceImpl`；纯 MyBatis 工程不声明。
+- 新建工程使用 MyBatis-Plus 时必须在 `pom.xml` 声明对应档位的 starter（Boot 2.x 用 `mybatis-plus-boot-starter`，Boot 3.x 用 `mybatis-plus-spring-boot3-starter`，均不写死 version），否则 entity 绑定型 Service 无法 `extends IService`/`ServiceImpl`；纯 MyBatis 工程不声明。
 - 正例 / 反例对照见 `references/project-structure.md` 的「Service 分层正反例」。
 
 ## 详细规范（按场景读取）
 
 | 场景 | 参考文件 |
 | ---- | -------- |
+| 版本档位判定、依赖坐标/配置键/命名空间/API 的两档对照、第三方 starter 变体命名、JDK 语言特性边界 | `references/version-baseline.md` |
 | 工程根目录布局(src/db/docs/.vscode/pom.xml/target)、包结构、包职责、类命名、对象转换分档与正反例、Service 分层正反例 | `references/project-structure.md` |
 | RESTful URL、HTTP 方法、状态码 | `references/api-design.md` |
 | API 文档（Knife4j/OpenAPI3）选型、接入、Controller 与 DTO/VO 注解、生产安全 | `references/api-doc.md` |
@@ -75,5 +89,6 @@ src/main/java/{basePackage}/
 7. 新建工程已产出 `src/main/resources/logback-spring.xml`（已 include `defaults.xml` 并使用内置 `${CONSOLE_LOG_PATTERN}`/`${FILE_LOG_PATTERN}`，CONSOLE + 滚动 FILE，`SizeAndTimeBasedRollingPolicy`），应用启动后 `logs/` 目录下日志文件已落盘。
 8. 每个 Controller 类有 `@Tag`，每个映射方法有 `@Operation` 与至少一条 `@ApiResponse`，每个路径变量/查询参数/请求头有 `@Parameter`，请求体 DTO 与响应 VO 的类及其字段都有 `@Schema`，`pom.xml` 已开启 `-parameters`。
 9. `pom.xml` 无 `flyway-core`/`liquibase-core` 依赖，`application*.yml` 无 `spring.flyway.*`/`spring.liquibase.*` 与 `spring.sql.init.mode=always`，不存在启动期自动执行 SQL 的代码；数据库脚本位于 `db/` 目录、由人工执行。
+10. 依赖坐标、配置键与 import 命名空间与 `pom.xml` 判定的档位一致：3.x 工程无 `javax.*`、无 `mybatis-plus-boot-starter`、无 `spring.redis.*`；2.x 工程无 `jakarta.*`、无 3.x 专有 API（如 `RabbitTemplateCustomizer`），也未使用 `record`/`var`/文本块/`List.of`。
 
 本节只覆盖本栈结构层面的自检，属于生成者自证，不能单独作为可交付结论。进入交付阶段后再加载 `code-gate`，按实际改动分级选择架构断言、变异测试、独立审查与证据格式；无需在编码开始前预载。

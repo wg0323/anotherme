@@ -5,7 +5,9 @@ description: |
   接入或配置 RabbitMQ、发送/消费消息、声明 Exchange/Queue/Binding、配置发布确认
   （confirm/returns）、事务性 Outbox、消费幂等与重试、死信队列、消息 TTL、quorum queue、
   prefetch/并发调优。目标是在明确故障边界的前提下实现至少一次投递和业务幂等，
-  避免以关闭可靠性的方式换取吞吐量。仅适用于 Spring Boot + Spring AMQP 技术栈。
+  避免以关闭可靠性的方式换取吞吐量。含 Spring Boot 2.x（JDK 8）与 3.x（JDK 17+）两档写法差异：
+  发布确认配置键、Return 回调接口、回调注册方式、javax/jakarta 校验包，先判档位再写代码与配置。
+  仅适用于 Spring Boot + Spring AMQP 技术栈。
 ---
 
 # RabbitMQ 消息可靠性与性能规范
@@ -25,11 +27,13 @@ description: |
 9. 不为吞吐量关闭核心消息的 Confirm、持久化或幂等。优先异步发布、合理设置 prefetch 和消费者并发、缩短业务处理时间；成功 Confirm 使用指标统计，不逐条写 INFO 日志。
 10. 消息体使用 `Jackson2JsonMessageConverter`，保持精简。JSON 场景不强制 `Serializable`/`serialVersionUID`；跨服务反序列化配置范围明确的信任包，禁止信任所有包。
 11. 含上层事务的消费重试将 `stateless` 设为 `false`，并提供唯一 `messageId`。日志禁止打印消息体原文，只记录消息 ID、队列、重试次数和长度等元信息。
+12. 写代码或配置前先判定 Spring Boot 档位（`pom.xml` 中 `spring-boot-starter-parent` / `spring-boot-dependencies` 的版本），再选本档写法：`publisher-confirm-type` 需 2.2+（2.0/2.1 只能 `publisher-confirms: true`）；`setReturnsCallback` 需 Spring AMQP 2.3+（2.2 及以前用五参 `setReturnCallback`）；`RabbitTemplateCustomizer` 仅 Boot 3.1+ 提供。看到「弃用」提示时先看本档是否已有替代 API，就地换写法，不因此升级框架；三档对照代码、判档命令与警告排查见 `references/version-diff.md`，禁止跨档复制示例。
 
 ## 详细规范与样例代码（按场景读取）
 
 | 场景 | 参考文件 |
 | ---- | -------- |
+| 档位判定、发布确认键与 Return 回调的三档对照、回调注册方式、弃用警告排查 | `references/version-diff.md` |
 | 连接配置、消费参数基线与性能注意事项 | `references/config-template.md` |
 | 事务性 Outbox、状态恢复、数据库与 MQ 双写 | `references/outbox.md` |
 | 生产者确认、Return、超时补偿、发送规范 | `references/producer.md` |
