@@ -36,6 +36,7 @@
 | `doc-writing` | doc_rule | Markdown 文档规范，附 README/CHANGELOG 模板（README 模板唯一真相源） |
 | `wx-miniapp-spec` | wx_miniapp_rule | 微信小程序原生开发，Modern JS 语法强制约束、新建项目 README 交付约束 |
 | `uniapp-spec` | uniapp_rule | uni-app（Vue3+Vite）跨端项目规范与项目生成约束（含 README 交付） |
+| `frontend-stack` | 新增 | 前端默认技术栈固定选型：后台 Vue3 + Element Plus、移动端 uni-app + uview-plus（锁 3.8.138），含起步模板、请求封装与禁止项 |
 | `ui-fidelity` | 新增 | 开源前端模板二次开发的界面保真（PC 后台 + 移动端）：模板接入侦察、基准页锚定、资产白名单、禁止清单、交付自检 |
 | `test-execution` | 新增 | 测试范围决策与执行纪律：全量成本三档、变更分级与影响面推导、冒烟清单、止损信号、停止后排查、收尾清理自产进程与临时产物 |
 | `code-gate` | 新增 | AI 生成代码的交付验收门禁：改动分级（可委托/必须读懂/禁止外包）、ArchUnit 架构断言与 Enforcer 禁令、变异测试、契约比对、独立审查、交付证据格式 |
