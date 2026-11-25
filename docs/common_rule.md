@@ -8,7 +8,7 @@ trigger: always_on
 
 ## 前端默认技术栈
 
-- 新建或改造前端时默认固定为：PC 管理后台 `Vue 3 + Element Plus`；移动端（H5 / 小程序 / App 一套代码）`uni-app + uview-plus@3.8.138`（锁定最后一个 MIT 版本，不升级、不买授权）。完整选型、起步模板与禁止项遵循 `frontend-stack` 技能。
+- 新建或改造前端时默认固定为：PC 管理后台 `Vue 3 + Element Plus`；移动端（H5 / 小程序 / App 一套代码）`uni-app + uview-plus@3.8.138`（锁定最后一个 MIT 版本，不升级、不买授权）；Windows 桌面小工具 `Tauri 2 + Vite + Vue 3 + TypeScript + Naive UI`（不引 Electron）。完整选型、起步模板与禁止项遵循 `frontend-stack` 与 `desktop-stack` 技能。
 - 仅当用户明确指定其他技术栈、或存量项目已用别的栈（以现有栈为准）时才偏离，不因“更先进/更流行”自行换栈。
 
 ## 规范技能加载

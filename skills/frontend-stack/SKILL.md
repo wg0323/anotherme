@@ -25,7 +25,7 @@ description: |
 | 样式 | SCSS；模板自带 Tailwind 则沿用 | SCSS + rpx |
 | 起步 | 克隆 `vue-pure-admin` | `npx degit dcloudio/uni-preset-vue#vite-ts` |
 
-需要桌面端时，用 Electron 壳套后台同一套页面，不另写一套 UI。
+需要桌面端时统一走 `desktop-stack`（Tauri 2），不引 Electron：桌面小工具按该技能新建；给后台页面套壳时壳内仍是同一套 Vue3 + Element Plus，不另写 UI。
 
 ## 二、铁律
 
@@ -55,5 +55,6 @@ description: |
 | HTML/CSS/JS/TS 语言规范 | `frontend-spec` |
 | uni-app 语法、目录、跨端适配、README 交付 | `uniapp-spec` |
 | 微信小程序原生开发 | `wx-miniapp-spec` |
+| Windows 桌面小工具的壳、IPC 与打包 | `desktop-stack` |
 | 既有模板里加页面的视觉一致 | `ui-fidelity` |
 | 后端接口与分层 | `springboot-spec` |
