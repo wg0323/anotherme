@@ -184,7 +184,7 @@ public class UserController {
 
     @Operation(summary = "创建用户", description = "注册新用户；用户名重复时返回 409")
     @ApiOperationSupport(order = 1)
-    @ApiResponse(responseCode = "201", description = "创建成功，返回新用户 ID")
+    @ApiResponse(responseCode = "201", description = "创建成功，返回新用户 ID（字符串形式，防 JS 精度丢失）")
     @ApiResponse(responseCode = "409", description = "用户名已存在")
     @PostMapping
     public Result<Long> create(@Valid @RequestBody UserCreateDTO dto) {
@@ -238,7 +238,7 @@ public class UserCreateDTO {
 @Schema(description = "用户详情")
 public class UserVO {
 
-    @Schema(description = "用户 ID", example = "1")
+    @Schema(description = "用户 ID（字符串形式，防 JS 精度丢失）", example = "1859230471882346496", type = "string")
     private Long id;
 
     @Schema(description = "用户名", example = "zhangsan")
@@ -253,6 +253,8 @@ public class UserVO {
 ```
 
 > VO 只包含展示需要的字段，不复用 Entity；字段 `description` 写业务含义，`example` 给真实形态；状态/枚举类字段必须列出取值对照，金额、时长等带单位的字段写明单位。
+>
+> 主键与关联 ID 字段保持 `Long` 类型，但必须加 `type = "string"`，与全局 Long→字符串序列化保持一致，否则文档显示 `integer(int64)`、前端按 number 生成类型（配置见 `id-serialization.md`）。
 
 ### 参数注解归属
 

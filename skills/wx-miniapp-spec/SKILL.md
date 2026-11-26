@@ -42,6 +42,7 @@ description: |
 - 合理使用本地存储和缓存机制。
 - wx API 的回调形式必须 Promise 化：基础库 2.10.2+ 异步 API 不传 success/fail/complete 时默认返回 Promise，或自行封装 / 使用 `miniprogram-api-promise`（微信无内置 `wx.promisify`），禁止嵌套回调。
 - 组件 properties 必须声明类型和默认值，data 初始化必须完整。
+- 后端返回雪花 ID 时以字符串形式下发，`api` 层与页面一律按字符串透传，禁止 `Number(id)` / `parseInt(id)`；`wx.request` 的 `res.data` 已完成 JSON 解析，精度在解析瞬间即丢失，无法事后补救。契约见 `frontend-spec` 的 `references/api-contract.md`。
 - 页面/组件的 JS 文件顶部必须添加文件头注释，说明用途、作者、创建日期。
 
 ## 新建项目自述文件（强制）

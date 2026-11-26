@@ -26,6 +26,7 @@ description: |
 8. TypeScript：`interface` / `type` 成员必须声明类型、分隔符统一 `;`；断言一律 `as Type`，禁止 `<Type>` 与可选链后的非空断言。
 9. React：Hooks 只在组件与自定义 Hook 的顶层调用、自定义 Hook 以 `use` 开头；列表 key 用稳定业务 id；`useEffect` 声明实际使用的依赖，例外按项目规则处理。
 10. Node.js：默认抛出原生 `Error`；线上避免 `fs` / `child_process` 的 sync 方法；错误详情不下发客户端、SQL 值必须参数化、入参应严格校验。
+11. 接口大整数 ID（雪花 ID）：后端以字符串下发，所有 ID 字段类型为 `string`，禁止 `Number()` / `parseInt()` / `+id` / 隐式转换，禁止按 ID 比较或排序（交由后端 SQL）；服务端仍返回裸数字时用 `json-bigint` 在 HTTP 层兜底并同步推动后端修复。
 
 ## 速查表
 
@@ -49,12 +50,14 @@ description: |
 | 类型组织、断言、类成员、模块导入、注释指令 | `references/typescript.md` |
 | 组件结构、JSX 风格、Props / State / Refs、Hooks、无障碍 | `references/react.md` |
 | Node 版本、依赖顺序、异常处理、安全规约、最佳实践 | `references/nodejs.md` |
+| 接口大整数 ID：TS 类型声明、禁止数值化与按 ID 排序、组件取值、`json-bigint` 兜底 | `references/api-contract.md` |
 
 ## 与其他技能的分工
 
 | 维度 | 以谁为准 |
 | ---- | -------- |
-| 语言层面的编码规范（本技能的 7 章） | 本技能 |
+| 语言层面的编码规范（本技能各语言章节） | 本技能 |
+| 接口数据契约：大整数 ID 的类型声明与禁止数值化 | 本技能（`references/api-contract.md`） |
 | 既有 Vue 3 模板中的视觉一致与组件复用 | `ui-fidelity` |
 | uni-app / 微信小程序的框架语法与工程结构 | `uniapp-spec` / `wx-miniapp-spec` |
 | Node.js 服务架构、API、认证与中间件 | `nodejs-backend-patterns` |
@@ -63,7 +66,7 @@ description: |
 
 ## 执行规则
 
-1. 只读取任务所需章节：JS / TS 任务读 `common` + `javascript`，TS 任务加读 `typescript`，React 任务加读 `react`，Node 任务加读 `nodejs`；纯 HTML / CSS 任务读取对应章节即可。未读取的章节不视为已核对。
+1. 只读取任务所需章节：JS / TS 任务读 `common` + `javascript`，TS 任务加读 `typescript`，React 任务加读 `react`，Node 任务加读 `nodejs`，对接后端接口时加读 `api-contract`；纯 HTML / CSS 任务读取对应章节即可。未读取的章节不视为已核对。
 2. 遵守已读取章节中适用的 `强制` 项。`推荐` 项按项目现状与任务收益采用，无需逐条解释未采用原因。
 3. 审查代码时引用规则编号；无编号条目引用章节与标题。只修改本次需求涉及的问题，无关存量违规仅报告，不顺手重构。
 4. 项目已配置 ESLint / Stylelint / Prettier 时以项目现有配置为准；配置与本文冲突时按项目配置执行，仅在实际影响本次修改时说明差异。

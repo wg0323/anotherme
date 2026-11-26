@@ -29,6 +29,7 @@ description: |
 2. **MyBatis-Plus**：`application.yml` 显式配置 `mybatis-plus.global-config.db-config.id-type: ASSIGN_ID`（3.3.0+ 默认即 ASSIGN_ID，显式声明防回退）；实体主键声明为 `Long id`，禁止 `@TableId(type = IdType.AUTO)`；insert 前无需手动赋值，框架自动回填。
 3. **原生 MyBatis**：insert 禁止 `useGeneratedKeys="true" keyProperty="id"`，主键由应用层生成后作为普通字段写入。项目已引入 MyBatis-Plus 时，优先注入同一个 `IdentifierGenerator` 生成 ID；使用静态 `IdWorker.getId()` 时，必须在应用启动且首次生成 ID 前，通过 `IdWorker.setIdentifierGenerator(...)` 或 `initSequence(...)` 显式统一配置，禁止自定义 Bean 与静态工具分别使用不同生成器。
 4. **多实例部署**：每个运行实例的 `workerId` / `datacenterId` 组合必须唯一，通过实例级环境变量或编排配置注入自定义 `IdentifierGenerator` Bean（`new DefaultIdentifierGenerator(workerId, datacenterId)`），禁止所有实例共用同一组固定值或依赖默认推导。默认雪花算法下两个取值均为 0～31；部署方案还必须明确时钟回拨处理策略。
+5. **对外传输**：雪花主键为 19 位 Long，超出前端 JS `Number` 的 53 位安全精度，HTTP 响应中的主键与关联 ID 必须序列化为字符串输出；数据库仍保持 `bigint`，索引、排序与范围查询不受影响，禁止为迁就前端把主键改成 `varchar`。工程侧配置见 `springboot-spec` 技能核心铁律 14。
 
 ## 索引规约
 

@@ -18,7 +18,7 @@ description: |
 ## 二、uni-app 跨端工程规范
 
 1. **目录约定**：`components`（easycom）、`pages`（含分包）、`api`（按模块拆分 `xxx.Api.ts`）、`config`、`static`、`utils`、`store`（Pinia）、`uni_modules`。
-2. **请求与路由**：禁裸调 `uni.request`，必须二次封装（拦截器/Token/错误处理）；跳转优先 JS-API 便于埋点，禁硬编码路由。
+2. **请求与路由**：禁裸调 `uni.request`，必须二次封装（拦截器/Token/错误处理）；跳转优先 JS-API 便于埋点，禁硬编码路由。后端返回雪花 ID（字符串形式）时，ID 一律按字符串透传，禁止 `Number()` / `parseInt()` 与按 ID 比较排序，契约见 `frontend-spec` 的 `references/api-contract.md`。
 3. **跨端适配**：样式优先 `rpx`（px 仅限 H5/1px 边框）；条件编译 `#ifdef` 仅必要时用；区分页面生命周期（onLoad）与组件生命周期（onMounted）。
 4. **性能与体积**：导航栏/TabBar 优先原生配置；大图走 CDN；微信主包 ≤2MB；按需分包优化首屏。
 
