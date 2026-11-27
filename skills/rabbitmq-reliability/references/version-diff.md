@@ -2,7 +2,7 @@
 
 RabbitMQ 接入的 API 在 Spring Boot 2.x 与 3.x 之间有交集但不重合，`RabbitTemplateCustomizer` 甚至到 3.1 才出现。本文件给出分档写法：先判档，再抄对应代码，禁止跨档复制。
 
-本文结论来自官方制品实测（`spring-boot-autoconfigure` 2.1.0 / 2.7.18 / 3.0.0 / 3.1.0 / 3.2.5，`spring-rabbit` 2.2.13 / 2.3.10 / 3.2.1），不按记忆推断。
+本文 API 与配置结论来自官方制品实测（`spring-boot-autoconfigure` 2.1.0 / 2.7.18 / 3.0.0 / 3.1.0 / 3.2.5，`spring-rabbit` 2.2.13 / 2.3.10 / 3.2.1）；MANUAL 下 fatal 异常的 2.1.9 版本边界依据 [Spring AMQP Exception Handling](https://docs.spring.io/spring-amqp/reference/3.2.4/amqp/exception-handling.html)。
 
 ## 一、判档
 
@@ -27,9 +27,10 @@ mvn dependency:tree -Dincludes=org.springframework.amqp
 | 回调注册方式 | 自定义 `RabbitTemplate` Bean 或 `InitializingBean` | 同左 | 同左 | `RabbitTemplateCustomizer`（3.1+）；3.0 同左 |
 | 消息 DTO 校验 | `javax.validation.*` | 同左 | 同左 | `jakarta.validation.*` |
 | 转换器、信任包、listener.retry.* | `Jackson2JsonMessageConverter` + `DefaultJackson2JavaTypeMapper.setTrustedPackages`，键名 `listener.simple.retry.*` | 同左 | 同左 | 同左（Boot 3 仍用 Jackson 2） |
+| MANUAL 下转换等 fatal 异常 | 2.1.9+ 默认 reject 且不 requeue；2.0 ~ 2.1.8 需自定义拒绝处理或保留 AUTO | 默认 reject 且不 requeue | 同左 | 同左 |
 | durable / quorum / DLX / TTL | Broker 侧能力，写法与档位无关 | 同左 | 同左 | 同左 |
 
-即：真正需要分档的只有「发布确认键、Return 回调接口、回调注册方式、校验命名空间」四件事。可靠性设计（Outbox、幂等、重试、死信）不因档位而变化，不要借版本差异重写业务逻辑。
+代码写法需要分档的是「发布确认键、Return 回调接口、回调注册方式、校验命名空间」四件事；使用 MANUAL 时还要核对转换等 fatal 异常的 2.1.9 版本边界。Outbox、幂等、重试和死信的可靠性设计不因档位而变化，不要借版本差异重写业务逻辑。
 
 ## 三、回调注册的三档写法
 
@@ -113,7 +114,16 @@ spring:
       mandatory: true
 ```
 
-## 五、看到「弃用」警告时怎么判断
+## 五、MANUAL 下反序列化异常的版本边界
+
+反序列化、消息转换和参数映射等 fatal 异常通常发生在监听器调用之前，不能指望监听器的 `try/catch` 或显式 `basicNack` 处理。
+
+- Spring AMQP 2.1.9+：`ConditionalRejectingErrorHandler` 默认即使在 MANUAL 下也会 reject 且不 requeue，配合 DLX 进入死信流程。
+- Spring AMQP 2.0～2.1.8：上述默认行为尚未提供，fatal 异常可能让消息滞留 unacked。核心监听器应保留 AUTO，或实现并验证自定义拒绝处理；不能只配置 `default-requeue-rejected=false` 就认定该窗口已经覆盖。
+
+上线前必须制造非法消息体或类型映射失败，检查消息进入 DLX 而不是长期停留在 unacked。
+
+## 六、看到「弃用」警告时怎么判断
 
 - **B 档项目里 `setReturnCallback` 被划掉**：说明 pom 在 2.3 以上、该类库已提供 `setReturnsCallback`。就地换写法即可，不需要升级 Spring Boot。
 - **A 档项目里出现弃用提示**：该类库本身到 2.3 才弃用旧接口，2.0~2.2 不会有该警告；若确实报弃用，说明实际依赖版本高于 pom 里看到的声明，先用 `mvn dependency:tree` 核实。

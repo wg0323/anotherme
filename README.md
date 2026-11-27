@@ -26,7 +26,7 @@
 | 技能 | 来源 | 适用场景 |
 | ---- | ---- | -------- |
 | `gitflow` | git_rule | commit 规范、分支生命周期、发版/热修复流程 |
-| `rabbitmq-reliability` | rabbitmq_rule | SpringBoot 接入 RabbitMQ，消息不丢不重，含完整样例代码与检查清单 |
+| `rabbitmq-reliability` | rabbitmq_rule | SpringBoot 接入 RabbitMQ，消息不丢不重；默认实施方案（Outbox、手动 ack、消费幂等、有界重试、死信重放）+ 样例代码与检查清单 |
 | `springboot-spec` | springboot_rule | SpringBoot 工程结构、RESTful API、依赖注入、日志异常、单测、新建工程 README 交付 |
 | `java-spec` | java_rule + vscode_rule | Java 编码强制规范；VSCode Maven 项目初始化配置 |
 | `frontend-spec` | 阿里巴巴前端规约 | HTML / CSS / JS / TS / React / Node.js 编码规范，含通用格式与前端安全基线 |

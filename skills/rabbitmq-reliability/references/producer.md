@@ -2,6 +2,8 @@
 
 不允许丢失的消息使用 Outbox 持久化事件，再由投递任务发布。`CorrelationData` 只携带本次发布的定位信息，不再保存用于重发的完整消息体；恢复数据来源是 Outbox，不是应用内存。
 
+术语：本文的 `eventId` 即消息的 `message_id`，重试与重放保持不变。
+
 ## 先明确 Confirm 与 Return 的含义
 
 - ACK 表示 Broker 已接管消息。持久化消息路由到 durable queue 时涉及落盘；quorum queue 需要多数派接受。它不表示消费者已经处理成功。
