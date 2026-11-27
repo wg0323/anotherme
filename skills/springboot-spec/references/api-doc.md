@@ -184,10 +184,16 @@ public class UserController {
 
     @Operation(summary = "创建用户", description = "注册新用户；用户名重复时返回 409")
     @ApiOperationSupport(order = 1)
-    @ApiResponse(responseCode = "201", description = "创建成功，返回新用户 ID（字符串形式，防 JS 精度丢失）")
-    @ApiResponse(responseCode = "409", description = "用户名已存在")
+    @ApiResponse(responseCode = "200", description = "创建成功；同 key 重放返回首次结果，新用户 ID 为字符串形式")
+    @ApiResponse(responseCode = "409", description = "用户名已存在，或幂等请求处理中/结果未缓存")
+    @Idempotent
     @PostMapping
-    public Result<Long> create(@Valid @RequestBody UserCreateDTO dto) {
+    public Result<Long> create(
+            @Parameter(description = "幂等键，8~128 位 [A-Za-z0-9_-]，同一操作重试必须复用", required = true)
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+            @Parameter(description = "请求体摘要，sha-256=:<base64>:，由客户端按实际 body 计算", required = true)
+            @RequestHeader(value = "Content-Digest", required = false) String contentDigest,
+            @Valid @RequestBody UserCreateDTO dto) {
         return Result.ok(userService.create(dto));
     }
 
