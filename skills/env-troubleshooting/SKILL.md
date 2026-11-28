@@ -58,7 +58,7 @@ description: |
 
 ## 边界
 
-- 新建工程的编码基线（五处对齐的要求）由 `springboot-spec` 铁律 13 约束，其详解指向本技能的 `console-encoding.md`，两处不重复维护。
+- 新建工程的编码基线（五处对齐的要求）由 `springboot-spec` 的 SB-13 约束，其详解指向本技能的 `console-encoding.md`，两处不重复维护。
 - 测试怎么跑、超时与止损、进程收尾归 `test-execution`。
 - 具体配置项名称、版本兼容性与官方行为语义的查证走 `external-research`（官方来源优先）。
 - 业务代码缺陷、工程结构与代码风格归各语言规范技能，本技能只处理环境与工具链层。

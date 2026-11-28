@@ -31,15 +31,15 @@ mvn test -Dmaven.test.skip=false -Dtest=ArchitectureTest
 
 | 现有条款 | 规则常量 | 手段 |
 | --- | --- | --- |
-| `springboot-spec` 铁律 3：Controller 不得越层调用 | `LAYERED_DEPENDENCY` | ArchUnit 分层 |
-| 铁律 8：`service` 根包只放接口 | `SERVICE_ROOT_SHOULD_BE_INTERFACES` | ArchUnit |
-| 铁律 8：`@Service` 只打在 `service.impl` | `SERVICE_ANNOTATION_ONLY_IN_IMPL` | ArchUnit |
-| 铁律 1：禁止字段注入 | `NO_FIELD_INJECTION` | GeneralCodingRules |
-| 铁律 4：禁止 `System.out` / `printStackTrace` | `NO_STANDARD_STREAMS` | GeneralCodingRules |
-| 铁律 5：自定义业务异常继承 `RuntimeException` | `NO_GENERIC_EXCEPTIONS` | GeneralCodingRules |
-| 铁律 10：Controller 必须 `@Tag` | `CONTROLLER_SHOULD_HAVE_TAG` | ArchUnit |
-| 铁律 10：映射方法必须 `@Operation` | `CONTROLLER_METHOD_SHOULD_HAVE_OPERATION` | ArchUnit |
-| 铁律 2：禁止 MapStruct 与 commons-beanutils | —— | maven-enforcer |
+| `springboot-spec` SB-3：Controller 不得越层调用 | `LAYERED_DEPENDENCY` | ArchUnit 分层 |
+| SB-8：`service` 根包只放接口 | `SERVICE_ROOT_SHOULD_BE_INTERFACES` | ArchUnit |
+| SB-8：`@Service` 只打在 `service.impl` | `SERVICE_ANNOTATION_ONLY_IN_IMPL` | ArchUnit |
+| SB-1：禁止字段注入 | `NO_FIELD_INJECTION` | GeneralCodingRules |
+| SB-4：禁止 `System.out` / `printStackTrace` | `NO_STANDARD_STREAMS` | GeneralCodingRules |
+| SB-5：自定义业务异常继承 `RuntimeException` | `NO_GENERIC_EXCEPTIONS` | GeneralCodingRules |
+| SB-10：Controller 必须 `@Tag` | `CONTROLLER_SHOULD_HAVE_TAG` | ArchUnit |
+| SB-10：映射方法必须 `@Operation` | `CONTROLLER_METHOD_SHOULD_HAVE_OPERATION` | ArchUnit |
+| SB-2：禁止 MapStruct 与 commons-beanutils | —— | maven-enforcer |
 
 ## 完整样例
 

@@ -52,11 +52,14 @@ AI 写代码、AI 写测试、AI 跑测试、AI 说通过——判断主体始�
 【变异测试】mvn org.pitest:pitest-maven:mutationCoverage → mutation score 78%
 【契约比对】openapi.json diff → 新增字段 userLevel，向后兼容
 【独立审查】新会话 review diff → 1 条阻断（事务跨远程调用），已修复
+【规范偏差】spec-gate 台账 → SB-8 遵守 ×2、SB-15 偏差已裁决（用户同意引入 Flyway）、SB-12 不适用（存量工程增量）
 【不确定点】1. 未核实 xxx 版本是否存在，按 yy 假设；2. 分页最大条数未确认
 【未覆盖】短信发送失败分支无可用测试环境
 ```
 
 只列本次适用的信号。该级别必需但未执行的条目写「未执行 + 原因」；不适用条目直接省略，不为填满模板展开无信息说明。
+
+【规范偏差】一行是 `spec-gate` 台账的结论引用，属于生成者自证，**不计入上述四类外部信号**；它只负责让静默跳过与冲突自裁可见，不得拿来替代编译、变异测试、契约比对或独立审查。
 
 ## 禁止事项
 
@@ -74,3 +77,4 @@ AI 写代码、AI 写测试、AI 跑测试、AI 说通过——判断主体始�
 | ArchUnit 规则样例（分层依赖、Service 分层、字段注入、Swagger 注解）、Maven Enforcer 禁令、存量冻结与排障 | `references/architecture-rules.md` |
 | 变异测试配置与阈值、契约快照（OpenAPI / DB 脚本）、覆盖率陷阱与反模式 | `references/test-effectiveness.md` |
 | 独立审查的输入输出约定、审查清单、阻断与建议分级、确认偏误规避 | `references/review-protocol.md` |
+| 规范符合性的技能绑定与偏差台账 | `spec-gate` 技能 |
