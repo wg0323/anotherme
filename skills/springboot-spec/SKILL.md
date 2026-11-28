@@ -55,22 +55,25 @@ description: |
 **SB-15**〔通用〕数据库脚本人工执行，禁止与应用启动绑定：建表、变更与初始化数据脚本一律由人手工执行——个人项目由开发者本人执行，公司项目由 DBA 审核后执行，应用启动不承担任何改库职责。**禁止**在 `pom.xml` 引入 `flyway-core`/`liquibase-core` 等迁移组件，**禁止** `spring.flyway.*`/`spring.liquibase.*` 配置，**禁止** `spring.sql.init.mode=always` 及启动钩子里执行 DDL/DML；Flyway/Liquibase 虽是 Spring Boot 官方推荐做法，也不构成引入理由。脚本放工程 `db/` 目录（布局见 `references/project-structure.md`），执行顺序写进 README 的「导入 SQL」步骤；脚本自身的 SQL 规约遵循 `db-spec` 技能「脚本交付规约」。
 **SB-16**〔通用〕写接口幂等强制（`POST`/`PUT`/`PATCH` 业务接口全覆盖，登录/登出/刷新令牌/验证码等认证类接口除外）：所有这三类业务映射方法必须标注 `@Idempotent`，客户端必须携带 `Idempotency-Key`（8~128 位 `[A-Za-z0-9_-]`）与 `Content-Digest`（`sha-256=:<base64>:`，无 body 可省），缺失或不合规返回 400；`userId` 按项目实际鉴权方式获取，统一封装 `CurrentUserProvider`（Spring Security 的 principal、Sa-Token 的 `StpUtil`、自定义 `UserContext`；网关透传时读网关注入且入口已剥离同名头的标识），缺失按 `anonymous`，禁止直接信任客户端自报 header。实现固定为「无 Filter、服务端不读请求体 + `@Aspect` + Redisson `StringCodec` + `SET NX PX` + Lua 完成/释放」，指纹为 `SHA-256(method + URI + query + bodyDigest)`、段间 `0x00`；同 key 同指纹返回首次结果，同 key 不同指纹 422，处理中或结果未缓存 409。首次抢占必须写入独立 `executionId`，`complete` 与业务异常时的 `release`（Lua `DEL`）都必须同时校验指纹与 `executionId`，防止处理中记录过期后旧请求误删或覆盖新记录；`complete` 阶段失败只记 warn，不释放、不回滚。Redis 故障必须快速失败，禁止降级放行。缓存只存 body 不存状态码，幂等接口成功时统一返回 200，成功响应禁止用 `ResponseEntity`/`@ResponseStatus`，禁止异步返回与直接写 `HttpServletResponse`；业务失败必须抛异常，不能返回 `Result.fail` 当正常返回。完整时序、Redis 结构、实现代码与验收用例见 `references/idempotency.md`。
 **SB-17**〔通用〕交付前必须显式运行测试：含核心业务逻辑的代码，交付前必须用 `mvn test -Dmaven.test.skip=false` 实际运行并通过对应测试，禁止只写不跑；执行纪律遵循 `test-execution` 技能。
+**SB-18**〔通用〕分包一律「先模块、后分层」：`src/main/java/{basePackage}` 下先按业务域建模块包（小写单数英语单词，如 `user`、`order`），模块包内再固定分出 `controller`、`service`、`service.impl`、`mapper`、`entity`、`dto`、`vo`，`converter` 按 SB-2 条件按需创建；禁止把所有模块的类堆进根包下的同一套分层包，也禁止把类直接平铺在模块包或根包下。跨模块共享的 `config`、`constant`、`enums`、`exception`、`utils` 留在根包，只服务单一模块的常量、枚举、异常、工具类放该模块下的同名子包。即使只有一个模块、某个子包只有一个类，也必须保留完整分包层次，不得合并或省略；与存量项目按层平铺的包结构冲突时，以本条为准。完整布局与放置判据见 `references/project-structure.md`。
 
 ## 新建工程骨架（强制产出清单）
 
-新建 Entity 绑定的 CRUD 工程或业务模块时按下列骨架产出文件，缺一即视为不合规（`{Entity}` 换实际实体名，完整包布局见 `references/project-structure.md`）。纯编排、定时任务、消息消费等非 CRUD 模块按实际职责选择 Controller、Service、Mapper 等类型，不强制创造无用途的 Entity 或空目录：
+新建 Entity 绑定的 CRUD 工程或业务模块时按下列骨架产出文件，缺一即视为不合规（`{Entity}` 换实际实体名，`{module}` 换业务模块包名，完整包布局见 `references/project-structure.md`）。纯编排、定时任务、消息消费等非 CRUD 模块按实际职责选择 Controller、Service、Mapper 等类型，不强制创造无用途的 Entity 或空目录：
 
 ```text
 src/main/java/{basePackage}/
-├── controller/{Entity}Controller.java
-├── service/{Entity}Service.java             # 接口：extends IService<{Entity}>
-├── service/impl/{Entity}ServiceImpl.java    # 实现：extends ServiceImpl<{Entity}Mapper, {Entity}>，@Service 只打在这里
-├── mapper/{Entity}Mapper.java
-├── entity/{Entity}.java
-├── dto/  vo/  converter/                    # converter 按需创建，见下方说明
+├── {module}/controller/{Entity}Controller.java
+├── {module}/service/{Entity}Service.java             # 接口：extends IService<{Entity}>
+├── {module}/service/impl/{Entity}ServiceImpl.java    # 实现：extends ServiceImpl<{Entity}Mapper, {Entity}>，@Service 只打在这里
+├── {module}/mapper/{Entity}Mapper.java
+├── {module}/entity/{Entity}.java
+├── {module}/dto/
+├── {module}/vo/
+└── {module}/converter/                               # 按需创建，见下方说明
 ```
 
-- 每个 `XxxService` 必须在 `service.impl` 有对应 `XxxServiceImpl`；Controller 与跨 Service 调用只注入接口，不注入实现类。
+- 先建模块包、再在模块内分层；即使只有一个模块、某个子包只有一个类，也保留 `{module}/controller` 这类完整路径，不把分层包提到根包。每个 `XxxService` 必须在所属模块的 `service.impl` 有对应 `XxxServiceImpl`；Controller 与跨 Service 调用只注入接口，不注入实现类。
 - `converter/` 按需创建：只有满足 SB-2 的抽类条件（同一转换 ≥2 处调用、被集合映射引用、存在非等价映射）时才建 `XxxConverter`，不为每个 Entity 预建转换类。
 - 新建工程必须在 `pom.xml` 声明 lombok 依赖（`<optional>true</optional>`，版本交由 `spring-boot-dependencies` 管理、不写 version），否则 `@RequiredArgsConstructor` 无法编译。
 - 新建工程使用 MyBatis-Plus 时必须在 `pom.xml` 声明对应档位的 starter（Boot 2.x 用 `mybatis-plus-boot-starter`，Boot 3.x 用 `mybatis-plus-spring-boot3-starter`，均不写死 version），否则 entity 绑定型 Service 无法 `extends IService`/`ServiceImpl`；纯 MyBatis 工程不声明。
@@ -81,7 +84,7 @@ src/main/java/{basePackage}/
 | 场景 | 参考文件 |
 | ---- | -------- |
 | 版本档位判定、依赖坐标/配置键/命名空间/API 的两档对照、第三方 starter 变体命名、JDK 语言特性边界 | `references/version-baseline.md` |
-| 工程根目录布局(src/db/docs/.vscode/pom.xml/target)、包结构、包职责、类命名、对象转换分档与正反例、Service 分层正反例 | `references/project-structure.md` |
+| 工程根目录布局(src/db/docs/.vscode/pom.xml/target)、先模块后分层的包结构、模块内子包职责、类命名、对象转换分档与正反例、Service 分层正反例 | `references/project-structure.md` |
 | RESTful URL、HTTP 方法、状态码、写接口幂等契约 | `references/api-design.md` |
 | 接口幂等实现（POST/PUT/PATCH 强制、Idempotency-Key + Content-Digest、纯切面无 Filter、Redisson 状态机、指纹与 executionId、Lua、验收用例） | `references/idempotency.md` |
 | 雪花 ID 的 JS 精度防护：全局 Long→字符串配置、类型收缩约定、影响范围、反序列化、文档对齐、存量兜底、验证 | `references/id-serialization.md` |
@@ -111,5 +114,6 @@ src/main/java/{basePackage}/
 13. [SB-5][SB-6][SB-7] 存在 `@ControllerAdvice` 全局异常处理且自定义业务异常继承 `RuntimeException`；外部输入已校验、用户资源已做归属权校验、SQL 全部 `#{}` 参数绑定、敏感字段未进日志；包名小写单数、单语义单词。
 14. [SB-11][SB-12][SB-13] 新建工程：`pom.xml` 已配 `maven.test.skip`；根目录已产出 `README.md`（骨架遵循 `doc-writing` 的 `readme-template.md`）；UTF-8 五处已对齐且终端 `chcp 65001` 生效。
 15. [SB-17] 含业务逻辑的代码已用 `mvn test -Dmaven.test.skip=false` 实际运行并通过，不是只写不跑。
+16. [SB-18] 业务类都在 `{module}/controller|service|service.impl|mapper|entity|dto|vo` 模块子包下，根包下不存在全部分层共用的扁平 `controller`/`service` 包；单类子包未被合并省略；模块专属常量、枚举、异常、工具类在模块子包内，跨模块共享类在根包全局子包内。
 
 本节只覆盖本栈结构层面的自检，属于生成者自证，不能单独作为可交付结论。台账与三态判定格式遵循 `spec-gate`；进入交付阶段后再加载 `code-gate`，按实际改动分级选择架构断言、变异测试、独立审查与证据格式；无需在编码开始前预载。

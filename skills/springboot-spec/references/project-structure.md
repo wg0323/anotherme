@@ -20,23 +20,55 @@ project-root/
 - 源码、可执行脚本、IDE 配置、构建配置、构建产物一律不进 docs。
 - docs/ 内部如何分类、建目录门槛，遵循 `doc-writing` 技能（唯一真相源）。
 
-## 包职责说明
+## 包结构：先模块、后分层（强制）
 
-| 包名           | 职责                              | 命名示例                                    |
-| -------------- | --------------------------------- | ------------------------------------------- |
-| `controller`   | HTTP 请求路由、参数绑定、响应封装 | `UserController`                            |
-| `service`      | 业务服务接口                      | `UserService`                               |
-| `service.impl` | 业务服务实现                      | `UserServiceImpl`                           |
-| `mapper`       | MyBatis Mapper 接口               | `UserMapper`                                |
-| `entity`       | 数据库实体映射                    | `User`                                      |
-| `dto`          | 接收请求参数                      | `UserCreateDTO`, `UserUpdateDTO`            |
-| `vo`           | 响应数据封装                      | `UserVO`, `UserDetailVO`                    |
-| `converter`    | 对象转换（按需创建）              | `UserConverter`                             |
-| `config`       | 配置类                            | `WebConfig`, `SwaggerConfig`                |
-| `constant`     | 常量定义                          | `UserConstant`                              |
-| `enums`        | 枚举类                            | `UserStatusEnum`                            |
-| `exception`    | 异常类                            | `BusinessException`                         |
-| `utils`        | 工具类                            | `StringUtils`、`DateUtils`、`SecurityUtils` |
+`src/main/java/{basePackage}` 下先按业务域建模块包，模块包内再按职责分层。模块名与分层包名同规则：小写、单数、单语义英语单词；禁止把分层包提到根包让所有模块共用一套 `controller`/`service`，也禁止拿技术分层充当模块名。与存量项目按层平铺的包结构冲突时，以本节结构为准，新代码不得继续沿用扁平包。
+
+```text
+src/main/java/{basePackage}/
+├── {ProjectName}Application.java              # 启动类直接位于根包
+├── {module}/                                  # 业务模块：一个业务域一个包，如 user、order、payment
+│   ├── controller/{Entity}Controller.java
+│   ├── service/{Entity}Service.java
+│   ├── service/impl/{Entity}ServiceImpl.java
+│   ├── mapper/{Entity}Mapper.java
+│   ├── entity/{Entity}.java
+│   ├── dto/
+│   ├── vo/
+│   ├── converter/                             # 按 SB-2 条件创建
+│   └── constant/  enums/  exception/  utils/  # 仅放只服务本模块的类
+├── config/                                    # 全局：跨模块共享
+└── constant/  enums/  exception/  utils/      # 全局：跨模块共享
+```
+
+放置判据：
+
+- 按使用方归属：只被一个模块使用 → 放该模块子包；被 ≥2 个模块或框架层使用 → 放根包全局子包。
+- 即使子包只有一个类，也保留完整分包路径；禁止把类直接放在模块包根下，也禁止把常量、枚举、异常塞进使用它的 `controller`/`service` 包。
+- 模块按业务域划分，不按技术分层划分。
+
+模块内子包职责（固定分层）：
+
+| 子包           | 职责                              | 命名示例                         |
+| -------------- | --------------------------------- | -------------------------------- |
+| `controller`   | HTTP 请求路由、参数绑定、响应封装 | `UserController`                 |
+| `service`      | 业务服务接口                      | `UserService`                    |
+| `service.impl` | 业务服务实现                      | `UserServiceImpl`                |
+| `mapper`       | MyBatis Mapper 接口               | `UserMapper`                     |
+| `entity`       | 数据库实体映射                    | `User`                           |
+| `dto`          | 接收请求参数                      | `UserCreateDTO`, `UserUpdateDTO` |
+| `vo`           | 响应数据封装                      | `UserVO`, `UserDetailVO`         |
+| `converter`    | 对象转换（按需创建）              | `UserConverter`                  |
+
+根包全局子包（跨模块共享）：
+
+| 子包        | 职责         | 命名示例                                    |
+| ----------- | ------------ | ------------------------------------------- |
+| `config`    | 配置类       | `WebConfig`, `SwaggerConfig`                |
+| `constant`  | 跨模块常量   | `CommonConstant`                            |
+| `enums`     | 跨模块枚举   | `YesNoEnum`                                 |
+| `exception` | 全局异常     | `BusinessException`                         |
+| `utils`     | 跨模块工具类 | `StringUtils`、`DateUtils`、`SecurityUtils` |
 
 ## 对象转换分档（强制）
 
@@ -50,7 +82,7 @@ project-root/
 ### A 档正例
 
 ```java
-// service/impl/UserServiceImpl.java
+// user/service/impl/UserServiceImpl.java
 UserVO vo = new UserVO();
 BeanUtils.copyProperties(user, vo);   // org.springframework.beans.BeanUtils，Spring 自带
 return vo;
@@ -61,7 +93,7 @@ return vo;
 ### B 档正例
 
 ```java
-// converter/UserConverter.java
+// user/converter/UserConverter.java
 public final class UserConverter {
 
     private UserConverter() {
@@ -109,20 +141,20 @@ for (User user : users) {
 
 ## Service 分层正反例（强制）
 
-所有业务 Service 一律「接口 + 实现」：接口在 `service` 包，实现在 `service.impl` 包，`@Service` 只标注实现类。Controller 与跨 Service 调用只依赖接口。
+所有业务 Service 一律「接口 + 实现」：接口在所属模块的 `service` 包，实现在该模块的 `service.impl` 包，`@Service` 只标注实现类。Controller 与跨 Service 调用只依赖接口。
 
 ### entity 绑定型（MyBatis-Plus 官方风格）
 
 下面两个 `extends` 都是强制项：只做到分包 + `implements` 接口不算合规。
 
 ```java
-// service/UserService.java
+// user/service/UserService.java
 public interface UserService extends IService<User> {
 
     Long create(UserCreateDTO dto);
 }
 
-// service/impl/UserServiceImpl.java
+// user/service/impl/UserServiceImpl.java
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
@@ -142,13 +174,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 此档反向禁止继承 `IService`/`ServiceImpl`，否则会凭空多出 `save`/`getById` 等与 Entity 无关的方法。
 
 ```java
-// service/OrderCommandService.java
+// order/service/OrderCommandService.java
 public interface OrderCommandService {
 
     void submit(OrderSubmitDTO dto);
 }
 
-// service/impl/OrderCommandServiceImpl.java
+// order/service/impl/OrderCommandServiceImpl.java
 @Service
 @RequiredArgsConstructor
 public class OrderCommandServiceImpl implements OrderCommandService {

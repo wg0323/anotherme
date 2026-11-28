@@ -32,7 +32,7 @@ mvn test -Dmaven.test.skip=false -Dtest=ArchitectureTest
 | 现有条款 | 规则常量 | 手段 |
 | --- | --- | --- |
 | `springboot-spec` SB-3：Controller 不得越层调用 | `LAYERED_DEPENDENCY` | ArchUnit 分层 |
-| SB-8：`service` 根包只放接口 | `SERVICE_ROOT_SHOULD_BE_INTERFACES` | ArchUnit |
+| SB-8：各模块 `service` 包只放接口 | `SERVICE_ROOT_SHOULD_BE_INTERFACES` | ArchUnit |
 | SB-8：`@Service` 只打在 `service.impl` | `SERVICE_ANNOTATION_ONLY_IN_IMPL` | ArchUnit |
 | SB-1：禁止字段注入 | `NO_FIELD_INJECTION` | GeneralCodingRules |
 | SB-4：禁止 `System.out` / `printStackTrace` | `NO_STANDARD_STREAMS` | GeneralCodingRules |
@@ -117,7 +117,7 @@ class ArchitectureTest {
 }
 ```
 
-注意 `resideInAPackage` 的两种写法：`..service` 精确匹配根包，`..service..` 会把 `service.impl` 一起匹配进来。写错会让"只放接口"这条规则误伤实现类。
+注意 `resideInAPackage` 的两种写法：`..service` 只匹配名为 `service` 的包本身（任意模块层级，不含 `service.impl`），`..service..` 会把 `service.impl` 一起匹配进来。写错会让"只放接口"这条规则误伤实现类。
 
 方法级规则里的 `areMetaAnnotatedWith(RequestMapping.class)` 用来识别 `@GetMapping`/`@PostMapping` 等派生注解。ArchUnit 1.x 支持该谓词；若你的版本不支持，改为逐个列出具体映射注解，或用自定义 `ArchCondition`。
 
